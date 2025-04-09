@@ -26,13 +26,16 @@ if(isset($_POST['generate_reg_id']) && isset($_POST['selected_practitioners']) &
     $current_max = ($max_row['max_num']) ? $max_row['max_num'] : 0;
     
     // Prepare update statement
-    $update_sql = "UPDATE practitioner SET registration_number = ?, registration_status = 'Active' WHERE practitioner_id = ?";
+    $update_sql = "UPDATE practitioner SET registration_number = ?, registration_status = 'Active', 
+                   practitioner_username = ?, practitioner_password = ?, is_first_login = 'Yes' 
+                   WHERE practitioner_id = ?";
     $update_stmt = $conn->prepare($update_sql);
-    $update_stmt->bind_param("si", $reg_number, $practitioner_id);
+    $update_stmt->bind_param("sssi", $reg_number, $reg_number, $hashed_password, $practitioner_id);
     
     foreach($selected_ids as $practitioner_id) {
         // Check if practitioner already has a registration number
-        $check_sql = "SELECT registration_number FROM practitioner WHERE practitioner_id = ?";
+        $check_sql = "SELECT p.registration_number, p.practitioner_name, p.practitioner_email_id, p.practitioner_birth_date 
+                     FROM practitioner p WHERE p.practitioner_id = ?";
         $check_stmt = $conn->prepare($check_sql);
         $check_stmt->bind_param("i", $practitioner_id);
         $check_stmt->execute();
@@ -48,11 +51,87 @@ if(isset($_POST['generate_reg_id']) && isset($_POST['selected_practitioners']) &
         $new_num = ++$current_max;
         $reg_number = 'KSAHC' . str_pad($new_num, 4, '0', STR_PAD_LEFT);
         
+        // Create password hash using date of birth (format: YYYY-MM-DD)
+        $dob = $practitioner_data['practitioner_birth_date'];
+        $hashed_password = password_hash($dob, PASSWORD_DEFAULT);
+        
         // Update the practitioner record
         $update_stmt->execute();
         
         if($update_stmt->affected_rows > 0) {
             $success_count++;
+            
+            // Send email notification using PHPMailer
+            require_once '../mail-config.php';   // Include mail configuration
+            
+            try {
+                // Get configured mailer
+                $mail = getConfiguredMailer();
+                
+                // Add recipient
+                $mail->addAddress($practitioner_data['practitioner_email_id'], $practitioner_data['practitioner_name']);
+                
+                // Email subject
+                $mail->Subject = "Your KSAHC Registration Number and Login Information";
+                
+                // Email body
+                $message_body = "
+                <html>
+                <head>
+                    <title>KSAHC Registration</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; }
+                        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+                        .header { background-color: #4e73df; color: white; padding: 15px; text-align: center; }
+                        .content { padding: 20px; border: 1px solid #ddd; }
+                        .footer { font-size: 12px; text-align: center; margin-top: 20px; color: #777; }
+                        .info-box { background-color: #f8f9fc; padding: 15px; margin: 15px 0; border-left: 4px solid #4e73df; }
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <h2>Karnataka State Allied & Healthcare Council</h2>
+                        </div>
+                        <div class='content'>
+                            <p>Dear " . htmlspecialchars($practitioner_data['practitioner_name']) . ",</p>
+                            <p>Congratulations! Your registration with Karnataka State Allied & Healthcare Council has been approved and a registration number has been generated for you.</p>
+                            
+                            <div class='info-box'>
+                                <p><strong>Registration Number:</strong> " . htmlspecialchars($reg_number) . "</p>
+                                <p><strong>Status:</strong> Active</p>
+                            </div>
+                            
+                            <h3>Login Information</h3>
+                            <p>You can now login to your KSAHC account using the following credentials:</p>
+                            <div class='info-box'>
+                                <p><strong>Username:</strong> " . htmlspecialchars($reg_number) . "</p>
+                                <p><strong>Initial Password:</strong> Your date of birth (YYYY-MM-DD format)</p>
+                            </div>
+                            
+                            <p><strong>Important:</strong> For security reasons, you will be required to change your password on your first login.</p>
+                            
+                            <p>To login, please visit our website at <a href='https://ksahc.in/login'>https://ksahc.in/login</a></p>
+                            
+                            <p>Thank you for registering with KSAHC.</p>
+                            
+                            <p>Best regards,<br>
+                            Karnataka State Allied & Healthcare Council</p>
+                        </div>
+                        <div class='footer'>
+                            <p>This is an automated email. Please do not reply to this message.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                ";
+                
+                $mail->Body = $message_body;
+                $mail->send();
+            } catch (Exception $e) {
+                // Log email sending error but continue with registration process
+                error_log("Failed to send registration email to practitioner ID {$practitioner_id}: " . $e->getMessage());
+            }
         } else {
             $error_count++;
         }
@@ -63,6 +142,7 @@ if(isset($_POST['generate_reg_id']) && isset($_POST['selected_practitioners']) &
         if($error_count > 0) {
             $message .= " Failed to generate for $error_count practitioners (they may already have registration numbers).";
         }
+        $message .= " Email notifications sent with login instructions.";
     } else {
         $message = "Failed to generate any registration numbers. All selected practitioners may already have registration numbers.";
         $alert_type = "danger";
@@ -654,6 +734,7 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
                         <h3 class="mt-4 font-weight-bold">Success!</h3>
                         <p class="mt-3">Generated registration numbers for <?php echo $success_count; ?> practitioners</p>
                         <p>Status updated from <span class="badge badge-success">Approved</span> to <span class="badge badge-info">Active</span></p>
+                        <p><i class="fas fa-envelope text-primary mr-1"></i> Login credentials sent to practitioner's email</p>
                         <button class="btn btn-primary mt-3" onclick="document.getElementById('successPopup').remove();">
                             <i class="fas fa-check mr-1"></i> OK
                         </button>

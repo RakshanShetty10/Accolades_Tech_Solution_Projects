@@ -378,7 +378,7 @@ $pageTitle = "View Practitioner Details | Karnataka State Allied & Healthcare Co
                                             <option value="Approved" <?php echo ($practitioner['registration_status'] == 'Approved') ? 'selected' : ''; ?>>Approved</option>
                                             <option value="Inactive" <?php echo ($practitioner['registration_status'] == 'Inactive') ? 'selected' : ''; ?>>Inactive</option>
                                         <?php elseif($practitioner['registration_status'] == 'Approved'): ?>
-                                            <!-- <option value="Active" <?php echo ($practitioner['registration_status'] == 'Active') ? 'selected' : ''; ?>>Active</option> -->
+                                            <option value="Active" <?php echo ($practitioner['registration_status'] == 'Active') ? 'selected' : ''; ?>>Active</option>
                                             <option value="Inactive" <?php echo ($practitioner['registration_status'] == 'Inactive') ? 'selected' : ''; ?>>Inactive</option>
                                         <?php else: ?>
                                             <option value="Pending" <?php echo ($practitioner['registration_status'] == 'Pending') ? 'selected' : ''; ?>>Pending</option>

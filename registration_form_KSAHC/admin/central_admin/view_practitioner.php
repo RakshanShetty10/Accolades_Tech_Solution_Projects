@@ -102,9 +102,16 @@ if(isset($_POST['generate_registration_number']) && $practitioner['registration_
         }
         
         // Update the practitioner with registration number and change status to Active
-        $update_sql = "UPDATE practitioner SET registration_number = ?, registration_status = 'Active' WHERE practitioner_id = ?";
+        $update_sql = "UPDATE practitioner SET registration_number = ?, registration_status = 'Active', 
+                      practitioner_username = ?, practitioner_password = ?, is_first_login = 'Yes'
+                      WHERE practitioner_id = ?";
         $update_stmt = $conn->prepare($update_sql);
-        $update_stmt->bind_param("si", $new_reg_id, $practitioner_id);
+        
+        // Create password using date of birth (format: YYYY-MM-DD)
+        $dob = $practitioner['practitioner_birth_date'];
+        $dob_password = password_hash($dob, PASSWORD_DEFAULT);
+        
+        $update_stmt->bind_param("sssi", $new_reg_id, $new_reg_id, $dob_password, $practitioner_id);
         
         if($update_stmt->execute()) {
             $message = "Registration number generated successfully: " . $new_reg_id;
@@ -113,6 +120,86 @@ if(isset($_POST['generate_registration_number']) && $practitioner['registration_
             // Refresh practitioner data
             $practitioner['registration_number'] = $new_reg_id;
             $practitioner['registration_status'] = 'Active';
+            $practitioner['practitioner_username'] = $new_reg_id;
+            $practitioner['is_first_login'] = 'Yes';
+            
+            // Send email notification using PHPMailer
+            require_once '../mail-config.php';   // Include mail configuration
+            
+            try {
+                // Get configured mailer
+                $mail = getConfiguredMailer();
+                
+                // Add recipient
+                $mail->addAddress($practitioner['practitioner_email_id'], $practitioner['practitioner_name']);
+                
+                // Email subject
+                $mail->Subject = "Your KSAHC Registration Number and Login Information";
+                
+                // Email body
+                $message_body = "
+                <html>
+                <head>
+                    <title>KSAHC Registration</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; }
+                        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+                        .header { background-color: #4e73df; color: white; padding: 15px; text-align: center; }
+                        .content { padding: 20px; border: 1px solid #ddd; }
+                        .footer { font-size: 12px; text-align: center; margin-top: 20px; color: #777; }
+                        .info-box { background-color: #f8f9fc; padding: 15px; margin: 15px 0; border-left: 4px solid #4e73df; }
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <h2>Karnataka State Allied & Healthcare Council</h2>
+                        </div>
+                        <div class='content'>
+                            <p>Dear " . htmlspecialchars($practitioner['practitioner_name']) . ",</p>
+                            <p>Congratulations! Your registration with Karnataka State Allied & Healthcare Council has been approved and a registration number has been generated for you.</p>
+                            
+                            <div class='info-box'>
+                                <p><strong>Registration Number:</strong> " . htmlspecialchars($new_reg_id) . "</p>
+                                <p><strong>Status:</strong> Active</p>
+                            </div>
+                            
+                            <h3>Login Information</h3>
+                            <p>You can now login to your KSAHC account using the following credentials:</p>
+                            <div class='info-box'>
+                                <p><strong>Username:</strong> " . htmlspecialchars($new_reg_id) . "</p>
+                                <p><strong>Initial Password:</strong> Your date of birth (YYYY-MM-DD format)</p>
+                            </div>
+                            
+                            <p><strong>Important:</strong> For security reasons, you will be required to change your password on your first login.</p>
+                            
+                            <p>To login, please visit our website at <a href='https://ksahc.in/login'>https://ksahc.in/login</a></p>
+                            
+                            <p>Thank you for registering with KSAHC.</p>
+                            
+                            <p>Best regards,<br>
+                            Karnataka State Allied & Healthcare Council</p>
+                        </div>
+                        <div class='footer'>
+                            <p>This is an automated email. Please do not reply to this message.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                ";
+                
+                $mail->Body = $message_body;
+                
+                $mail_sent = $mail->send();
+                
+                if($mail_sent) {
+                    $message .= " Login credentials sent to practitioner's email.";
+                } else {
+                    $message .= " Note: Failed to send email notification.";
+                }
+            } catch (Exception $e) {
+                $message .= " Note: Failed to send email notification. Error: " . $mail->ErrorInfo;
+            }
         } else {
             $message = "Error generating registration number: " . $conn->error;
             $alert_type = "danger";
@@ -659,6 +746,30 @@ $pageTitle = "View Practitioner Details | Karnataka State Allied & Healthcare Co
                                         </div>
                                     </div>
                                 </div>
+                                <div class="info-item">
+                                    <div class="row">
+                                        <div class="col-md-5 info-label">Username</div>
+                                        <div class="col-md-7">
+                                            <?php if(!empty($practitioner['practitioner_username'])): ?>
+                                                <?php echo htmlspecialchars($practitioner['practitioner_username']); ?>
+                                            <?php else: ?>
+                                                <span class="text-muted">Not set</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="row">
+                                        <div class="col-md-5 info-label">First Login Status</div>
+                                        <div class="col-md-7">
+                                            <?php if($practitioner['is_first_login'] == 'Yes'): ?>
+                                                <span class="badge badge-warning">Not Logged In Yet</span>
+                                            <?php else: ?>
+                                                <span class="badge badge-success">Completed</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
                                 <?php endif; ?>
                                 <div class="info-item">
                                     <div class="row">
@@ -719,6 +830,8 @@ $pageTitle = "View Practitioner Details | Karnataka State Allied & Healthcare Co
                         <h3 class="mt-4 font-weight-bold">Registration Number Generated!</h3>
                         <h2 class="text-success mt-3 font-weight-bold">${regNumber}</h2>
                         <p class="mt-3">Practitioner status updated to <span class="badge badge-info p-2">Active</span></p>
+                        <p><i class="fas fa-user-lock text-primary mr-1"></i> Login credentials created: Username is ${regNumber}</p>
+                        <p><i class="fas fa-envelope text-primary mr-1"></i> Login details sent to practitioner's email</p>
                         <button class="btn btn-primary mt-3 px-4 py-2" onclick="document.getElementById('successPopup').remove();">
                             <i class="fas fa-check mr-1"></i> OK
                         </button>
