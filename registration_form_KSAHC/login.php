@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['user_name'] = $user['practitioner_name'];
                         
                         // Redirect to profile page
-                        header("Location: profile.php");
+                        header("Location: welcome.php");
                         exit;
                     } else {
                         $error = "Incorrect password. Please try again.";

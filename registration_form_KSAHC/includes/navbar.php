@@ -1,6 +1,6 @@
 <!-- KSAHC Portal Navigation Bar -->
 <nav class="navbar navbar-expand-lg navbar-light fixed-top">
-    <div class="container-fluid">
+    <div class="container">
         <a class="navbar-brand" href="welcome.php">
             <img src="ksahc_logo.png" alt="KSAHC Logo">
             KSAHC Portal

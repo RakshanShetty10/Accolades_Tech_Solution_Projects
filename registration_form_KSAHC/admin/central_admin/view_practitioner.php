@@ -114,94 +114,107 @@ if(isset($_POST['generate_registration_number']) && $practitioner['registration_
         $update_stmt->bind_param("sssi", $new_reg_id, $new_reg_id, $dob_password, $practitioner_id);
         
         if($update_stmt->execute()) {
-            $message = "Registration number generated successfully: " . $new_reg_id;
-            $alert_type = "success";
+            // Verify the update was successful
+            $verify_sql = "SELECT registration_status FROM practitioner WHERE practitioner_id = ?";
+            $verify_stmt = $conn->prepare($verify_sql);
+            $verify_stmt->bind_param("i", $practitioner_id);
+            $verify_stmt->execute();
+            $verify_result = $verify_stmt->get_result();
+            $verify_data = $verify_result->fetch_assoc();
             
-            // Refresh practitioner data
-            $practitioner['registration_number'] = $new_reg_id;
-            $practitioner['registration_status'] = 'Active';
-            $practitioner['practitioner_username'] = $new_reg_id;
-            $practitioner['is_first_login'] = 'Yes';
-            
-            // Send email notification using PHPMailer
-            require_once '../mail-config.php';   // Include mail configuration
-            
-            try {
-                // Get configured mailer
-                $mail = getConfiguredMailer();
+            if ($verify_data && $verify_data['registration_status'] === 'Active') {
+                $message = "Registration number generated successfully: " . $new_reg_id;
+                $alert_type = "success";
                 
-                // Add recipient
-                $mail->addAddress($practitioner['practitioner_email_id'], $practitioner['practitioner_name']);
+                // Refresh practitioner data
+                $practitioner['registration_number'] = $new_reg_id;
+                $practitioner['registration_status'] = 'Active';
+                $practitioner['practitioner_username'] = $new_reg_id;
+                $practitioner['is_first_login'] = 'Yes';
                 
-                // Email subject
-                $mail->Subject = "Your KSAHC Registration Number and Login Information";
+                // Send email notification using PHPMailer
+                require_once '../mail-config.php';   // Include mail configuration
                 
-                // Email body
-                $message_body = "
-                <html>
-                <head>
-                    <title>KSAHC Registration</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; line-height: 1.6; }
-                        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
-                        .header { background-color: #4e73df; color: white; padding: 15px; text-align: center; }
-                        .content { padding: 20px; border: 1px solid #ddd; }
-                        .footer { font-size: 12px; text-align: center; margin-top: 20px; color: #777; }
-                        .info-box { background-color: #f8f9fc; padding: 15px; margin: 15px 0; border-left: 4px solid #4e73df; }
-                    </style>
-                </head>
-                <body>
-                    <div class='container'>
-                        <div class='header'>
-                            <h2>Karnataka State Allied & Healthcare Council</h2>
-                        </div>
-                        <div class='content'>
-                            <p>Dear " . htmlspecialchars($practitioner['practitioner_name']) . ",</p>
-                            <p>Congratulations! Your registration with Karnataka State Allied & Healthcare Council has been approved and a registration number has been generated for you.</p>
-                            
-                            <div class='info-box'>
-                                <p><strong>Registration Number:</strong> " . htmlspecialchars($new_reg_id) . "</p>
-                                <p><strong>Status:</strong> Active</p>
+                try {
+                    // Get configured mailer
+                    $mail = getConfiguredMailer();
+                    
+                    // Add recipient
+                    $mail->addAddress($practitioner['practitioner_email_id'], $practitioner['practitioner_name']);
+                    
+                    // Email subject
+                    $mail->Subject = "Your KSAHC Registration Number and Login Information";
+                    
+                    // Email body
+                    $message_body = "
+                    <html>
+                    <head>
+                        <title>KSAHC Registration</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; line-height: 1.6; }
+                            .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+                            .header { background-color: #4e73df; color: white; padding: 15px; text-align: center; }
+                            .content { padding: 20px; border: 1px solid #ddd; }
+                            .footer { font-size: 12px; text-align: center; margin-top: 20px; color: #777; }
+                            .info-box { background-color: #f8f9fc; padding: 15px; margin: 15px 0; border-left: 4px solid #4e73df; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class='container'>
+                            <div class='header'>
+                                <h2>Karnataka State Allied & Healthcare Council</h2>
                             </div>
-                            
-                            <h3>Login Information</h3>
-                            <p>You can now login to your KSAHC account using the following credentials:</p>
-                            <div class='info-box'>
-                                <p><strong>Username:</strong> " . htmlspecialchars($new_reg_id) . "</p>
-                                <p><strong>Initial Password:</strong> Your date of birth (YYYY-MM-DD format)</p>
+                            <div class='content'>
+                                <p>Dear " . htmlspecialchars($practitioner['practitioner_name']) . ",</p>
+                                <p>Congratulations! Your registration with Karnataka State Allied & Healthcare Council has been approved and a registration number has been generated for you.</p>
+                                
+                                <div class='info-box'>
+                                    <p><strong>Registration Number:</strong> " . htmlspecialchars($new_reg_id) . "</p>
+                                    <p><strong>Status:</strong> Active</p>
+                                </div>
+                                
+                                <h3>Login Information</h3>
+                                <p>You can now login to your KSAHC account using the following credentials:</p>
+                                <div class='info-box'>
+                                    <p><strong>Username:</strong> " . htmlspecialchars($new_reg_id) . "</p>
+                                    <p><strong>Initial Password:</strong> Your date of birth (YYYY-MM-DD format)</p>
+                                </div>
+                                
+                                <p><strong>Important:</strong> For security reasons, you will be required to change your password on your first login.</p>
+                                
+                                <p>To login, please visit our website at <a href='https://ksahc.in/login'>https://ksahc.in/login</a></p>
+                                
+                                <p>Thank you for registering with KSAHC.</p>
+                                
+                                <p>Best regards,<br>
+                                Karnataka State Allied & Healthcare Council</p>
                             </div>
-                            
-                            <p><strong>Important:</strong> For security reasons, you will be required to change your password on your first login.</p>
-                            
-                            <p>To login, please visit our website at <a href='https://ksahc.in/login'>https://ksahc.in/login</a></p>
-                            
-                            <p>Thank you for registering with KSAHC.</p>
-                            
-                            <p>Best regards,<br>
-                            Karnataka State Allied & Healthcare Council</p>
+                            <div class='footer'>
+                                <p>This is an automated email. Please do not reply to this message.</p>
+                            </div>
                         </div>
-                        <div class='footer'>
-                            <p>This is an automated email. Please do not reply to this message.</p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                ";
-                
-                $mail->Body = $message_body;
-                
-                $mail_sent = $mail->send();
-                
-                if($mail_sent) {
-                    $message .= " Login credentials sent to practitioner's email.";
-                } else {
-                    $message .= " Note: Failed to send email notification.";
+                    </body>
+                    </html>
+                    ";
+                    
+                    $mail->Body = $message_body;
+                    
+                    $mail_sent = $mail->send();
+                    
+                    if($mail_sent) {
+                        $message .= " Login credentials sent to practitioner's email.";
+                    } else {
+                        $message .= " Note: Failed to send email notification.";
+                    }
+                } catch (Exception $e) {
+                    $message .= " Note: Failed to send email notification. Error: " . $mail->ErrorInfo;
                 }
-            } catch (Exception $e) {
-                $message .= " Note: Failed to send email notification. Error: " . $mail->ErrorInfo;
+            } else {
+                $message = "Error verifying practitioner status: " . $conn->error;
+                $alert_type = "danger";
             }
         } else {
-            $message = "Error generating registration number: " . $conn->error;
+            $message = "Error updating practitioner: " . $conn->error;
             $alert_type = "danger";
         }
     }

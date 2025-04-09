@@ -62,6 +62,7 @@ if(isset($_POST['generate_reg_id']) && isset($_POST['selected_practitioners']) &
             $success_count++;
             
             // Send email notification using PHPMailer
+            // require '../../vendor/autoload.php'; // Include PHPMailer autoload file
             require_once '../mail-config.php';   // Include mail configuration
             
             try {
@@ -161,7 +162,7 @@ $search_term = isset($_GET['search']) ? $_GET['search'] : '';
 $sql = "SELECT p.*, rt.registration_type 
         FROM practitioner p
         LEFT JOIN registration_type_master rt ON p.registration_type_id = rt.registration_type_id
-        WHERE p.registration_status = 'Approved'";
+        WHERE p.registration_status = 'Approved' OR (p.registration_status = 'Active' AND p.registration_number IS NOT NULL)";
 
 // Add search conditions if search term is provided
 if($search_term) {
@@ -174,7 +175,7 @@ if($search_term) {
 $sql .= " ORDER BY p.practitioner_id DESC LIMIT ?, ?";
 
 // Total records query with search
-$countSql = "SELECT COUNT(*) as total FROM practitioner WHERE registration_status = 'Approved'";
+$countSql = "SELECT COUNT(*) as total FROM practitioner WHERE registration_status = 'Approved' OR (registration_status = 'Active' AND registration_number IS NOT NULL)";
 if($search_term) {
     $countSql .= " AND (practitioner_name LIKE ? OR 
                         practitioner_email_id LIKE ? OR 
@@ -205,11 +206,12 @@ $totalRecords = $countStmt->get_result()->fetch_assoc()['total'];
 $totalPages = ceil($totalRecords / $recordsPerPage);
 
 // Get counts for dashboard - without state filter
-$count_sql = "SELECT COUNT(*) as total, 
-                     SUM(CASE WHEN registration_number IS NOT NULL THEN 1 ELSE 0 END) as registered,
-                     SUM(CASE WHEN registration_number IS NULL THEN 1 ELSE 0 END) as pending_registration
+$count_sql = "SELECT 
+                 COUNT(*) as total, 
+                 SUM(CASE WHEN registration_number IS NOT NULL AND registration_status = 'Active' THEN 1 ELSE 0 END) as registered,
+                 SUM(CASE WHEN registration_number IS NULL AND registration_status = 'Approved' THEN 1 ELSE 0 END) as pending_registration
               FROM practitioner 
-              WHERE registration_status = 'Approved'";
+              WHERE registration_status IN ('Approved', 'Active')";
 $count_result = $conn->query($count_sql);
 $counts = $count_result->fetch_assoc();
 

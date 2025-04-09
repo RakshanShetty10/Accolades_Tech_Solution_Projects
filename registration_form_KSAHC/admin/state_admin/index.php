@@ -11,6 +11,24 @@ require_once '../../config/config.php';
 //     exit;
 // }
 
+// Auto-correct practitioners with registration numbers but not "Active" status
+$auto_correction_sql = "UPDATE practitioner 
+                      SET registration_status = 'Active' 
+                      WHERE registration_number IS NOT NULL 
+                      AND registration_number != '' 
+                      AND registration_status != 'Active'";
+$correction_result = $conn->query($auto_correction_sql);
+
+// Notify about corrections if any were made
+if ($correction_result && $conn->affected_rows > 0) {
+    $corrected_count = $conn->affected_rows;
+    $auto_message = "$corrected_count practitioner(s) with registration numbers automatically set to Active status.";
+    $auto_alert_type = "info";
+    
+    // Log the correction
+    error_log("Auto-corrected $corrected_count practitioners to Active status (they had registration numbers)");
+}
+
 // Process bulk actions
 if(isset($_POST['bulk_action']) && isset($_POST['selected_practitioners'])) {
     $bulk_action = $_POST['bulk_action'];
@@ -182,9 +200,21 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
             <div class="container-fluid">
                 <h1 class="mt-4 mb-4">Applied Practitioner List For Approval</h1>
                 
+                <!-- Display notifications -->
                 <?php if(isset($message)): ?>
                 <div class="alert alert-<?php echo $alert_type; ?> alert-dismissible fade show" role="alert">
+                    <i class="fas fa-<?php echo $alert_type == 'success' ? 'check-circle' : ($alert_type == 'danger' ? 'exclamation-circle' : 'info-circle'); ?> mr-2"></i>
                     <?php echo $message; ?>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <?php endif; ?>
+                
+                <?php if(isset($auto_message)): ?>
+                <div class="alert alert-<?php echo $auto_alert_type; ?> alert-dismissible fade show" role="alert">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    <?php echo $auto_message; ?>
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>

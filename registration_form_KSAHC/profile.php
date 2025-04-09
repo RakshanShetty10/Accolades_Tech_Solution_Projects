@@ -201,15 +201,7 @@ $education_data = $education_result->fetch_assoc();
         
         /* Sidebar styles */
         .sidebar {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            z-index: 100;
-            padding: 70px 0 0;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-            background-color: #fff;
-            width: 250px;
+            display: none; /* Hide the sidebar since we're using the navbar */
         }
         
         .sidebar .nav-link {
@@ -364,54 +356,8 @@ $education_data = $education_result->fetch_assoc();
         </div>
     </div>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <img src="ksahc_logo.png" alt="KSAHC Logo">
-                KSAHC Portal
-            </a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ml-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="profile.php">
-                            <i class="fas fa-home"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-history"></i> Transaction History
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-certificate"></i> Certificates
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown">
-                            <i class="fas fa-user-circle"></i> <?php echo htmlspecialchars($user_name); ?>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-right">
-                            <a class="dropdown-item" href="profile.php">
-                                <i class="fas fa-user"></i> Profile
-                            </a>
-                            <a class="dropdown-item" href="reset_password.php">
-                                <i class="fas fa-key"></i> Change Password
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="logout.php">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </a>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <!-- Include Navbar -->
+    <?php include 'includes/navbar.php'; ?>
 
     <!-- Main Content -->
     <div class="main-content">
@@ -649,6 +595,9 @@ $education_data = $education_result->fetch_assoc();
             </div>
         </div>
     </div>
+
+    <!-- Include Footer -->
+    <?php include 'includes/footer.php'; ?>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>

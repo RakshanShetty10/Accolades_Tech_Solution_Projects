@@ -36,6 +36,24 @@ if($result->num_rows == 0) {
 
 $practitioner = $result->fetch_assoc();
 
+// Simple status correction - if registration number exists, status should be Active
+if (!empty($practitioner['registration_number']) && $practitioner['registration_status'] !== 'Active') {
+    // Fix the inconsistency
+    $conn->query("UPDATE practitioner SET registration_status = 'Active' WHERE practitioner_id = $practitioner_id");
+    
+    // Log the correction
+    error_log("Auto-corrected status for practitioner ID {$practitioner_id} with registration number {$practitioner['registration_number']}");
+    
+    // Refresh practitioner data
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $practitioner = $result->fetch_assoc();
+    
+    // Set notification
+    $message = "Status automatically updated to Active because this practitioner has a registration number.";
+    $alert_type = "info";
+}
+
 // Fetch education information
 $edu_sql = "SELECT e.*, c.college_name, u.university_name
             FROM education_information e
@@ -369,7 +387,7 @@ $pageTitle = "View Practitioner Details | Karnataka State Allied & Healthcare Co
                             <?php endif; ?>
                             
                             <!-- Status Update Form - Only show for Pending or Approved status -->
-                            <?php if($practitioner['registration_status'] != 'Active'): ?>
+                            <?php if($practitioner['registration_status'] != 'Active' && empty($practitioner['registration_number'])): ?>
                             <form method="POST" class="mt-5">
                                 <div class="form-group">
                                     <label for="status"><strong>Update Status:</strong></label>
@@ -388,6 +406,10 @@ $pageTitle = "View Practitioner Details | Karnataka State Allied & Healthcare Co
                                 </div>
                                 <button type="submit" name="update_status" class="btn btn-primary btn-block">Update Status</button>
                             </form>
+                            <?php elseif(!empty($practitioner['registration_number'])): ?>
+                            <div class="alert alert-info mt-5">
+                                <i class="fas fa-info-circle mr-2"></i> This practitioner has been assigned registration number <strong><?php echo htmlspecialchars($practitioner['registration_number']); ?></strong> and is set to <strong>Active</strong> status.
+                            </div>
                             <?php endif; ?>
                             
                             <!-- Send Remark Button - Always visible -->
