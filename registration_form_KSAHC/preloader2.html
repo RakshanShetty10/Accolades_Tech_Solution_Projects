@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KSAHC - Karnataka State Allied and Healthcare Council</title>
+    <style>
+        :root {
+            --primary-blue: #0a2880;
+            --secondary-blue: #1e3fa1;
+            --light-blue: #4a6fc0;
+            --accent-silver: #d9d9d9;
+            --bg-light: #f7f9fc;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-light);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .preloader-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--bg-light) 0%, #e4eaf7 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.8s, visibility 0.8s;
+        }
+        
+        .preloader-content {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logo-container {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .logo {
+            width: 160px;
+            height: 160px;
+            position: relative;
+            z-index: 5;
+            animation: pulse 3s infinite alternate ease-in-out;
+        }
+        
+        .outer-circle {
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            border: 2px solid rgba(10, 40, 128, 0.2);
+            animation: rotate 12s linear infinite;
+        }
+        
+        .ripple {
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            border: 1px solid var(--primary-blue);
+            opacity: 0;
+            transform: scale(0.8);
+            animation: ripple 3s infinite;
+        }
+        
+        .circle1, .circle2, .circle3 {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--primary-blue);
+            transform-origin: center;
+        }
+        
+        .circle1 {
+            width: 10px;
+            height: 10px;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .circle2 {
+            width: 8px;
+            height: 8px;
+            bottom: 30px;
+            left: 30px;
+        }
+        
+        .circle3 {
+            width: 12px;
+            height: 12px;
+            bottom: 30px;
+            right: 30px;
+        }
+        
+        .rotating-wings {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: rotate-reverse 15s linear infinite;
+        }
+        
+        .wing {
+            position: absolute;
+            width: 40px;
+            height: 80px;
+            background: linear-gradient(90deg, rgba(74, 111, 192, 0.2), rgba(10, 40, 128, 0.1));
+            border-radius: 50% 50% 0 0;
+        }
+        
+        .wing:nth-child(1) { transform: rotate(0deg) translateY(-70px); }
+        .wing:nth-child(2) { transform: rotate(45deg) translateY(-70px); }
+        .wing:nth-child(3) { transform: rotate(90deg) translateY(-70px); }
+        .wing:nth-child(4) { transform: rotate(135deg) translateY(-70px); }
+        .wing:nth-child(5) { transform: rotate(180deg) translateY(-70px); }
+        .wing:nth-child(6) { transform: rotate(225deg) translateY(-70px); }
+        .wing:nth-child(7) { transform: rotate(270deg) translateY(-70px); }
+        .wing:nth-child(8) { transform: rotate(315deg) translateY(-70px); }
+        
+        .progress-wrapper {
+            width: 280px;
+            margin-top: 40px;
+            text-align: center;
+        }
+        
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: var(--primary-blue);
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(10, 40, 128, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-blue), var(--light-blue));
+            width: 0%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 60px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            animation: glow 2s infinite;
+        }
+        
+        .title-text {
+            margin-top: 35px;
+            text-align: center;
+        }
+        
+        .ksahc-title {
+            color: var(--primary-blue);
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            opacity: 0;
+            animation: fade-in 1s forwards 0.5s;
+        }
+        
+        .subtitle {
+            color: var(--secondary-blue);
+            font-size: 16px;
+            font-weight: 400;
+            opacity: 0;
+            animation: fade-in 1s forwards 1s;
+        }
+        
+        .loading-status {
+            margin-top: 15px;
+            color: var(--light-blue);
+            font-size: 15px;
+            height: 20px;
+        }
+        
+        /* Main content (hidden initially) */
+        .content {
+            text-align: center;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(0.95); }
+            100% { transform: scale(1.05); }
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes rotate-reverse {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-360deg); }
+        }
+        
+        @keyframes ripple {
+            0% { transform: scale(0.8); opacity: 0.8; }
+            100% { transform: scale(1.2); opacity: 0; }
+        }
+        
+        @keyframes glow {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(400%); }
+        }
+        
+        @keyframes fade-in {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="preloader-container">
+        <div class="preloader-content">
+            <div class="logo-container">
+                <div class="outer-circle">
+                    <div class="circle1"></div>
+                    <div class="circle2"></div>
+                    <div class="circle3"></div>
+                </div>
+                <div class="ripple"></div>
+                <div class="rotating-wings">
+                    <div class="wing"></div>
+                    <div class="wing"></div>
+                    <div class="wing"></div>
+                    <div class="wing"></div>
+                    <div class="wing"></div>
+                    <div class="wing"></div>
+                    <div class="wing"></div>
+                    <div class="wing"></div>
+                </div>
+                <img src="ksahc_logo.png" alt="KSAHC Logo" class="logo">
+            </div>
+            
+            <div class="title-text">
+                <div class="ksahc-title">KSAHC</div>
+                <div class="subtitle">Karnataka State Allied and Healthcare Council</div>
+            </div>
+            
+            <div class="progress-wrapper">
+                <div class="progress-text">
+                    <span id="loading-percent">0%</span>
+                    <span>Loading resources</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill">
+                        <div class="progress-glow"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="loading-status" id="loading-status">Initializing...</div>
+        </div>
+    </div>
+
+    <div class="content">
+        <h1>Welcome to KSAHC</h1>
+        <p>Karnataka State Allied and Healthcare Council</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const progressFill = document.querySelector('.progress-fill');
+            const percentText = document.getElementById('loading-percent');
+            const loadingStatus = document.getElementById('loading-status');
+            const preloader = document.querySelector('.preloader-container');
+            const content = document.querySelector('.content');
+            
+            const loadingMessages = [
+                "Initializing...",
+                "Loading resources...",
+                "Fetching data...",
+                "Preparing dashboard...",
+                "Loading government services...",
+                "Almost ready..."
+            ];
+            
+            let progress = 0;
+            const totalTime = 5000; // 5 seconds total loading time
+            const interval = 30; // Update every 30ms
+            const increment = 100 / (totalTime / interval);
+            
+            const timer = setInterval(function() {
+                progress += increment;
+                
+                // Update loading bar
+                const currentProgress = Math.min(Math.floor(progress), 100);
+                progressFill.style.width = currentProgress + '%';
+                percentText.textContent = currentProgress + '%';
+                
+                // Update loading message
+                const messageIndex = Math.floor((currentProgress / 100) * loadingMessages.length);
+                loadingStatus.textContent = loadingMessages[Math.min(messageIndex, loadingMessages.length - 1)];
+                
+                // When loading is complete
+                if (currentProgress >= 100) {
+                    clearInterval(timer);
+                    loadingStatus.textContent = "Welcome to KSAHC Portal";
+                    
+                    // Hide preloader after a short delay
+                    setTimeout(function() {
+                        preloader.style.opacity = '0';
+                        preloader.style.visibility = 'hidden';
+                        content.style.opacity = '1';
+                    }, 500);
+                }
+            }, interval);
+        });
+    </script>
+</body>
+</html>

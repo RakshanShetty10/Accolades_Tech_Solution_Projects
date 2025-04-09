@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KSAHC Preloader</title>
+</head>
+<body>
+    <div class="preloader">
+        <div class="loader">
+            <div class="wing-container">
+                <div class="wing left-wing"></div>
+                <div class="wing right-wing"></div>
+                <div class="staff"></div>
+            </div>
+            <div class="loading-bar">
+                <div class="bar"></div>
+            </div>
+            <div class="text">Loading...</div>
+        </div>
+    </div>
+    <div class="content" style="display: none;">
+        <h1>Welcome to KSAHC</h1>
+        <p>This is the main content of the page.</p>
+    </div>
+    <script src="script.js"></script>
+</body>
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+    background: #000;
+}
+
+.preloader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.loader {
+    text-align: center;
+}
+
+.wing-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    animation: rotate 2s infinite linear;
+}
+
+.wing {
+    position: absolute;
+    top: 50%;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(45deg, #1e90ff, #00b7eb);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    transform-origin: center;
+}
+
+.left-wing {
+    left: 0;
+    transform: translateY(-50%) rotate(45deg);
+}
+
+.right-wing {
+    right: 0;
+    transform: translateY(-50%) rotate(-45deg);
+}
+
+.staff {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 60px;
+    background: #fff;
+    transform: translate(-50%, -50%);
+    border-radius: 5px;
+}
+
+.loading-bar {
+    width: 200px;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    margin-top: 20px;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.bar {
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, #1e90ff, #00b7eb);
+    animation: load 3s infinite ease-in-out;
+}
+
+.text {
+    color: #fff;
+    font-size: 18px;
+    margin-top: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.content {
+    padding: 20px;
+    color: #fff;
+    text-align: center;
+}
+
+@keyframes rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes load {
+    0% { width: 0; }
+    50% { width: 100%; }
+    100% { width: 0; }
+}
+
+.fade-out {
+    animation: fadeOut 1s ease-in-out forwards;
+}
+
+@keyframes fadeOut {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+</style>
+<script>window.addEventListener('load', function() {
+    const preloader = document.querySelector('.preloader');
+    const content = document.querySelector('.content');
+
+    // Simulate loading time (you can adjust this)
+    setTimeout(() => {
+        preloader.classList.add('fade-out');
+        setTimeout(() => {
+            preloader.style.display = 'none';
+            content.style.display = 'block';
+        }, 1000); // Match the fade-out animation duration
+    }, 4000); // Total preloader duration (4 seconds)
+});</script>
+</html>

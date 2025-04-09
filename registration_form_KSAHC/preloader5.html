@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KSAHC Preloader</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+        
+        body {
+            margin: 0;
+            font-family: 'Montserrat', Arial, sans-serif;
+            overflow: hidden;
+            background: #000;
+        }
+        
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .loader {
+            text-align: center;
+            position: relative;
+        }
+        
+        .logo-container {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+            position: relative;
+            animation: pulsate 2s infinite alternate;
+        }
+        
+        .logo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            z-index: 5;
+            position: relative;
+        }
+        
+        .wing-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            animation: rotate 6s infinite linear;
+        }
+        
+        .wing {
+            position: absolute;
+            top: 50%;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #4a6fc0, #8da9e9);
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            transform-origin: center;
+            box-shadow: 0 0 15px rgba(30, 144, 255, 0.5);
+        }
+        
+        .left-wing {
+            left: -20px;
+            transform: translateY(-50%) rotate(45deg);
+        }
+        
+        .right-wing {
+            right: -20px;
+            transform: translateY(-50%) rotate(-45deg);
+        }
+        
+        .staff {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 70px;
+            background: #fff;
+            transform: translate(-50%, -50%);
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
+        }
+        
+        .circular-progress {
+            position: absolute;
+            top: -15px;
+            left: -15px;
+            width: calc(100% + 30px);
+            height: calc(100% + 30px);
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: #fff;
+            border-bottom-color: rgba(255, 255, 255, 0.5);
+            animation: spin 2s linear infinite;
+        }
+        
+        .loading-bar {
+            width: 250px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            margin: 30px auto 0;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .bar {
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #1e90ff, #00b7eb);
+            animation: load 3s infinite ease-in-out;
+            position: relative;
+        }
+        
+        .bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 20px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            filter: blur(5px);
+        }
+        
+        .text {
+            color: #fff;
+            font-size: 16px;
+            margin-top: 15px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: 600;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .dots {
+            display: inline-flex;
+            margin-left: 5px;
+        }
+        
+        .dot {
+            width: 5px;
+            height: 5px;
+            margin: 0 2px;
+            border-radius: 50%;
+            background-color: #fff;
+            opacity: 0.2;
+        }
+        
+        .dot:nth-child(1) {
+            animation: dotFade 1.5s infinite;
+            animation-delay: 0s;
+        }
+        
+        .dot:nth-child(2) {
+            animation: dotFade 1.5s infinite;
+            animation-delay: 0.5s;
+        }
+        
+        .dot:nth-child(3) {
+            animation: dotFade 1.5s infinite;
+            animation-delay: 1s;
+        }
+        
+        .organization {
+            color: #fff;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+            opacity: 0;
+            animation: fadeIn 1s forwards 1s;
+        }
+        
+        .tagline {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeIn 1s forwards 1.5s;
+        }
+        
+        .content {
+            padding: 20px;
+            color: #fff;
+            text-align: center;
+            background: linear-gradient(135deg, #030b2e 0%, #0a2880 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: particleFloat linear infinite;
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes load {
+            0% { width: 0; }
+            50% { width: 100%; }
+            100% { width: 0; }
+        }
+        
+        @keyframes particleFloat {
+            0% { transform: translateY(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-100vh); opacity: 0; }
+        }
+        
+        @keyframes dotFade {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+        
+        @keyframes pulsate {
+            0% { transform: scale(0.95); }
+            100% { transform: scale(1.05); }
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-out {
+            animation: fadeOut 1s ease-in-out forwards;
+        }
+        
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="preloader">
+        <div class="particles" id="particles"></div>
+        <div class="loader">
+            <div class="organization">KSAHC</div>
+            <div class="tagline">Karnataka State Allied and Healthcare Council</div>
+            <div class="logo-container">
+                <div class="circular-progress"></div>
+                <img src="ksahc_logo.png" alt="KSAHC Logo" class="logo">
+                <div class="wing-container">
+                    <div class="wing left-wing"></div>
+                    <div class="wing right-wing"></div>
+                    <div class="staff"></div>
+                </div>
+            </div>
+            <div class="loading-bar">
+                <div class="bar"></div>
+            </div>
+            <div class="text">
+                Loading
+                <div class="dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="content" style="display: none;">
+        <h1>Welcome to KSAHC</h1>
+        <p>Karnataka State Allied and Healthcare Council</p>
+        <p>This is the main content of the page.</p>
+    </div>
+    
+    <script>
+        // Create particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random position
+                const posX = Math.random() * 100;
+                const posY = Math.random() * 100;
+                particle.style.left = posX + '%';
+                particle.style.top = posY + '%';
+                
+                // Random size
+                const size = Math.random() * 2 + 1;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                
+                // Random animation duration
+                const duration = Math.random() * 15 + 10;
+                particle.style.animationDuration = duration + 's';
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+        
+        window.addEventListener('load', function() {
+            createParticles();
+            
+            const preloader = document.querySelector('.preloader');
+            const content = document.querySelector('.content');
+            
+            // Simulate loading time (you can adjust this)
+            setTimeout(() => {
+                preloader.classList.add('fade-out');
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                    content.style.display = 'block';
+                }, 1000); // Match the fade-out animation duration
+            }, 5000); // Total preloader duration (5 seconds)
+        });
+    </script>
+</body>
+</html>
