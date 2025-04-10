@@ -17,7 +17,7 @@ $user_id = $_SESSION['user_id'];
 $username = $_SESSION['username'];
 $user_name = $_SESSION['user_name'] ?? 'Practitioner';
 
-// Fetch practitioner information
+// Fetch practitioner information with profile image
 $practitioner_sql = "SELECT p.*, rt.registration_type 
                     FROM practitioner p
                     LEFT JOIN registration_type_master rt ON p.registration_type_id = rt.registration_type_id
@@ -28,107 +28,165 @@ $practitioner_stmt->execute();
 $practitioner_result = $practitioner_stmt->get_result();
 $practitioner_data = $practitioner_result->fetch_assoc();
 
-// Fetch address information
-$address_sql = "SELECT * FROM practitioner_address WHERE practitioner_id = ?";
-$address_stmt = $conn->prepare($address_sql);
-$address_stmt->bind_param("i", $user_id);
-$address_stmt->execute();
-$address_result = $address_stmt->get_result();
-$address_data = $address_result->fetch_assoc();
+// Fetch current president information from past_president table
+$president_sql = "SELECT * FROM past_president WHERE president_status = 'Active' ORDER BY president_id DESC LIMIT 1";
+$president_result = $conn->query($president_sql);
+$president_data = $president_result->fetch_assoc();
 
-// Fetch education information
-$education_sql = "SELECT e.*, c.college_name, u.university_name
-                 FROM education_information e
-                 LEFT JOIN college_master c ON e.college_id = c.college_id
-                 LEFT JOIN university_master u ON e.university_id = u.university_id
-                 WHERE e.practitioner_id = ?";
-$education_stmt = $conn->prepare($education_sql);
-$education_stmt->bind_param("i", $user_id);
-$education_stmt->execute();
-$education_result = $education_stmt->get_result();
-$education_data = $education_result->fetch_assoc();
-
-// Fetch remarks
-// $remarks_sql = "SELECT * FROM remarks WHERE practitioner_id = ? ORDER BY created_at DESC";
-// $remarks_stmt = $conn->prepare($remarks_sql);
-// $remarks_stmt->bind_param("i", $user_id);
-// $remarks_stmt->execute();
-// $remarks_result = $remarks_stmt->get_result();
-
-// Fetch documents
-// $documents_sql = "SELECT * FROM documents WHERE practitioner_id = ? ORDER BY uploaded_at DESC";
-// $documents_stmt = $conn->prepare($documents_sql);
-// $documents_stmt->bind_param("i", $user_id);
-// $documents_stmt->execute();
-// $documents_result = $documents_stmt->get_result();
-// ?>
+// Default president information if none found in database
+if (!$president_data) {
+    $president_data = [
+        'president_name' => 'Dr. Rajesh Kumar',
+        'president_from_date' => date('Y-m-d'),
+        'president_to_date' => date('Y-m-d', strtotime('+1 year')),
+        'president_image' => 'president.jpg'
+    ];
+}
+?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Practitioner Profile | KSAHC</title>
+    <title>My Profile | KSAHC Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/navbar.css">
+    <link rel="stylesheet" href="css/profile.css">
     <style>
         :root {
-            --primary-color: #4e73df;
-            --secondary-color: #1cc88a;
-            --dark-color: #3a3b45;
+            --primary-color: #2A5C9D;
+            --secondary-color: #4A90E2;
+            --accent-color: #33b679;
+            --dark-color: #2C3E50;
             --light-color: #f8f9fc;
+            --border-color: #e3e6f0;
+            --gradient-start: #2A5C9D;
+            --gradient-end: #1E3F75;
+            --card-shadow: 0 10px 20px rgba(0,0,0,0.08);
+            --hover-shadow: 0 15px 30px rgba(0,0,0,0.12);
         }
         
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #f8f9fc;
+            background-color: #F5F7FA;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            padding-top: 60px;
+            color: #444;
         }
 
         /* Preloader Styles */
-        .preloader {
+        .preloader-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: #fff;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 9999;
-            transition: opacity 0.5s ease-out;
+            transition: opacity 0.5s, visibility 0.5s;
         }
 
-        .preloader.fade-out {
+        .logo-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .logo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            animation: pulse 2s infinite alternate;
+        }
+
+        .spinner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 4px solid transparent;
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-color);
+            border-right: 4px solid var(--primary-color);
+            animation: spin 1.5s linear infinite;
+        }
+
+        .spinner-inner {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            border: 3px solid transparent;
+            border-radius: 50%;
+            border-top: 3px solid var(--secondary-color);
+            border-left: 3px solid var(--secondary-color);
+            animation: spin-reverse 1.2s linear infinite;
+        }
+
+        .loading-text {
+            margin-top: 30px;
+            color: var(--primary-color);
+            font-size: 18px;
+            letter-spacing: 3px;
+            position: relative;
+        }
+
+        .loading-dots {
+            display: inline-block;
+            width: 30px;
+            text-align: left;
+        }
+
+        .loading-dot {
+            animation: dot-fade 1.5s infinite;
+            animation-delay: calc(0.3s * var(--dot-index));
             opacity: 0;
         }
 
-        .preloader-content {
-            text-align: center;
+        .progress-bar {
+            width: 250px;
+            height: 6px;
+            background: rgba(78, 115, 223, 0.2);
+            border-radius: 3px;
+            margin-top: 20px;
+            overflow: hidden;
         }
 
-        .preloader-logo {
-            width: 120px;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
+        .progress {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 3px;
+            animation: progress 3s ease-in-out infinite;
         }
 
-        .preloader-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--primary-color);
+        .wings-effect {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px;
+            height: 180px;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        .preloader-text {
-            color: var(--dark-color);
-            font-size: 14px;
-            font-weight: 500;
+            background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%);
+            opacity: 0;
+            animation: wings-glow 3s infinite;
         }
 
         @keyframes spin {
@@ -136,459 +194,493 @@ $education_data = $education_result->fetch_assoc();
             100% { transform: rotate(360deg); }
         }
 
+        @keyframes spin-reverse {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-360deg); }
+        }
+
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+            0% { transform: scale(0.95); opacity: 0.7; }
+            100% { transform: scale(1.05); opacity: 1; }
         }
 
-        /* Navbar Styles */
-        .navbar {
-            background-color: #fff;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-            padding: 0.5rem 1rem;
+        @keyframes dot-fade {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
         }
 
-        .navbar-brand {
-            font-weight: 700;
-            color: var(--primary-color) !important;
+        @keyframes progress {
+            0% { width: 5%; }
+            50% { width: 75%; }
+            100% { width: 95%; }
         }
 
-        .navbar-brand img {
-            height: 40px;
-            margin-right: 10px;
-        }
-
-        .navbar-nav .nav-link {
-            color: var(--dark-color);
-            font-weight: 500;
-            padding: 0.5rem 1rem;
-        }
-
-        .navbar-nav .nav-link:hover {
-            color: var(--primary-color);
-        }
-
-        .navbar-nav .nav-link.active {
-            color: var(--primary-color);
-        }
-
-        .dropdown-menu {
-            border: none;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-        }
-
-        .dropdown-item {
-            color: var(--dark-color);
-            font-weight: 500;
-        }
-
-        .dropdown-item:hover {
-            background-color: var(--light-color);
-            color: var(--primary-color);
-        }
-
-        .dropdown-item i {
-            width: 20px;
-            margin-right: 8px;
+        @keyframes wings-glow {
+            0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.2); }
         }
 
         /* Main Content Styles */
         .main-content {
-            margin-top: 60px;
-            padding: 20px;
+            padding: 30px 0;
+            flex: 1;
         }
         
-        /* Sidebar styles */
-        .sidebar {
-            display: none; /* Hide the sidebar since we're using the navbar */
-        }
-        
-        .sidebar .nav-link {
-            color: var(--dark-color);
-            padding: 1rem;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-        
-        .sidebar .nav-link:hover {
+        .main-title {
             color: var(--primary-color);
-            background-color: var(--light-color);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-color);
+            display: inline-block;
         }
         
-        .sidebar .nav-link.active {
+        /* Integrated Profile & Welcome Message Card */
+
+        /* Info Card */
+        .info-card {
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+            margin-bottom: 25px;
+            box-shadow: var(--card-shadow);
+            transition: box-shadow 0.3s ease;
+        }
+        
+        .info-card:hover {
+            box-shadow: var(--hover-shadow);
+        }
+        
+        .info-card-header {
+            background: linear-gradient(to right, var(--gradient-start), var(--gradient-end));
+            color: white;
+            padding: 18px 25px;
+        }
+        
+        .info-card-header h5 {
+            margin-bottom: 0;
+            font-weight: 600;
+        }
+        
+        .info-card-body {
+            padding: 0;
+        }
+        
+        .quick-links {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 0;
+        }
+        
+        .quick-links li {
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .quick-links li:last-child {
+            border-bottom: none;
+        }
+        
+        .quick-links li a {
+            color: #444;
+            display: block;
+            padding: 15px 20px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .quick-links li a::after {
+            content: "\f054";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            opacity: 0;
+            color: var(--secondary-color);
+            transition: all 0.2s ease;
+        }
+        
+        .quick-links li:hover {
+            background-color: rgba(74, 144, 226, 0.05);
+        }
+        
+        .quick-links li:hover a {
             color: var(--primary-color);
-            background-color: var(--light-color);
+            padding-left: 25px;
+            text-decoration: none;
         }
         
-        .sidebar .nav-link i {
-            margin-right: 10px;
+        .quick-links li:hover a::after {
+            opacity: 1;
+            right: 15px;
+        }
+        
+        .quick-links li a i {
+            margin-right: 12px;
+            color: var(--primary-color);
             width: 20px;
             text-align: center;
+            background: rgba(42, 92, 157, 0.1);
+            padding: 7px;
+            border-radius: 5px;
+            transition: all 0.2s ease;
         }
         
-        /* Card styles */
-        .card {
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        .quick-links li:hover a i {
+            background: rgba(42, 92, 157, 0.2);
+        }
+
+        /* Page header */
+        .page-header {
+            padding: 0 15px 15px;
             margin-bottom: 20px;
+            display: flex;
+            align-items: center;
         }
         
-        .card-header {
-            background-color: #fff;
-            border-bottom: 1px solid #e3e6f0;
-            padding: 1rem 1.25rem;
-        }
-        
-        .card-header h5 {
+        .page-header .main-title {
             margin-bottom: 0;
-            color: var(--dark-color);
-            font-weight: 600;
         }
         
-        /* Tab styles */
-        .nav-tabs {
-            border-bottom: 1px solid #e3e6f0;
-        }
-        
-        .nav-tabs .nav-link {
-            color: var(--dark-color);
-            border: none;
-            padding: 1rem 1.5rem;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-        
-        .nav-tabs .nav-link:hover {
-            color: var(--primary-color);
-            border: none;
-        }
-        
-        .nav-tabs .nav-link.active {
-            color: var(--primary-color);
-            border: none;
-            border-bottom: 2px solid var(--primary-color);
-        }
-        
-        /* Profile image styles */
-        .profile-img-container {
-            position: relative;
-            width: 150px;
-            height: 150px;
-            margin: 0 auto 20px;
-        }
-        
-        .profile-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 5px solid white;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Info item styles */
-        .info-item {
-            padding: 15px;
-            border-bottom: 1px solid #f1f1f1;
-        }
-        
-        .info-item:last-child {
-            border-bottom: none;
-        }
-        
-        .info-label {
-            font-weight: 600;
-            color: var(--dark-color);
-            margin-bottom: 5px;
-        }
-        
-        .info-value {
-            color: #666;
-        }
-        
-        /* Document list styles */
-        .document-item {
-            padding: 15px;
-            border-bottom: 1px solid #f1f1f1;
-            display: flex;
-            align-items: center;
-        }
-        
-        .document-item:last-child {
-            border-bottom: none;
-        }
-        
-        .document-icon {
-            width: 40px;
-            height: 40px;
-            background-color: var(--light-color);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            color: var(--primary-color);
-        }
-        
-        /* Responsive styles */
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                position: relative;
-                padding: 0;
+       
+        /* Media Queries */
+        @media (max-width: 991.98px) {
+            .profile-welcome-body {
+                flex-direction: column;
             }
             
-            .main-content {
-                margin-left: 0;
+            .profile-section, .welcome-section {
+                width: 100%;
+            }
+            
+            .profile-section {
+                border-right: none;
+                border-bottom: 1px solid rgba(0,0,0,0.05);
+                padding-bottom: 30px;
+            }
+        }
+        
+        @media (max-width: 767.98px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Preloader -->
-    <div class="preloader">
-        <div class="preloader-content">
-            <img src="ksahc_logo.png" alt="KSAHC Logo" class="preloader-logo">
-            <div class="preloader-spinner"></div>
-            <div class="preloader-text">Loading your profile...</div>
-        </div>
-    </div>
-
     <!-- Include Navbar -->
     <?php include 'includes/navbar.php'; ?>
 
+    <!-- Preloader -->
+    <div class="preloader-container">
+        <div class="logo-container">
+            <div class="spinner"></div>
+            <div class="spinner-inner"></div>
+            <div class="wings-effect"></div>
+            <img src="ksahc_logo.png" alt="KSAHC Logo" class="logo">
+        </div>
+        <div class="progress-bar">
+            <div class="progress"></div>
+        </div>
+        <div class="loading-text">
+            LOADING<span class="loading-dots">
+                <span class="loading-dot" style="--dot-index: 1">.</span>
+                <span class="loading-dot" style="--dot-index: 2">.</span>
+                <span class="loading-dot" style="--dot-index: 3">.</span>
+            </span>
+        </div>
+    </div>
+
     <!-- Main Content -->
     <div class="main-content">
-        <div class="container-fluid">
-            <!-- Welcome Alert -->
-            <div class="alert alert-primary" role="alert">
-                <h4 class="alert-heading"><i class="fas fa-user-check mr-2"></i>Welcome, <?php echo htmlspecialchars($user_name); ?>!</h4>
-                <p class="mb-0">You are logged in as a registered practitioner. Your registration number is <strong><?php echo htmlspecialchars($username); ?></strong></p>
+        <div class="container">
+            <div class="page-header">
+                <h4 class="main-title">My Profile</h4>
             </div>
-
-            <!-- Tabs -->
-            <ul class="nav nav-tabs" id="profileTabs" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link active" id="personal-tab" data-toggle="tab" href="#personal" role="tab">Personal Information</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="contact-tab" data-toggle="tab" href="#contact" role="tab">Contact Information</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="education-tab" data-toggle="tab" href="#education" role="tab">Education</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="remarks-tab" data-toggle="tab" href="#remarks" role="tab">Remarks</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="documents-tab" data-toggle="tab" href="#documents" role="tab">Documents</a>
-                </li>
-            </ul>
-
-            <!-- Tab Content -->
-            <div class="tab-content" id="profileTabsContent">
-                <!-- Personal Information Tab -->
-                <div class="tab-pane fade show active" id="personal" role="tabpanel">
-                    <div class="card">
+            
+            <!-- Main Sections -->
+            <div class="row">
+                <!-- Left Column - Quick Links -->
+                <div class="col-lg-4">
+                    <div class="info-card">
+                        <div class="info-card-header">
+                            <h5>Quick Links</h5>
+                        </div>
+                        <div class="info-card-body">
+                            <ul class="quick-links">
+                                <li><a href="profile.php"><i class="fas fa-user-circle"></i> My Profile</a></li>
+                                <li><a href="#"><i class="fas fa-file-alt"></i> My Documents</a></li>
+                                <li><a href="#"><i class="fas fa-certificate"></i> Certificates</a></li>
+                                <li><a href="#"><i class="fas fa-sync"></i> Renewal</a></li>
+                                <li><a href="reset_password.php"><i class="fas fa-key"></i> Change Password</a></li>
+                                <li><a href="#"><i class="fas fa-question-circle"></i> Help & Support</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Profile Summary Card -->
+                  
+                </div>
+                
+                <!-- Right Column - Profile Details -->
+                <div class="col-lg-8">
+                    <div class="card profile-card">
+                        <!-- Profile Tabs Navigation -->
+                        <div class="card-header p-0">
+                            <ul class="nav nav-tabs profile-tabs" id="profileTabs" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" id="personal-tab" data-toggle="tab" href="#personal" role="tab" aria-controls="personal" aria-selected="true">
+                                        <i class="fas fa-user"></i> Personal Info
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="contact-tab" data-toggle="tab" href="#contact" role="tab" aria-controls="contact" aria-selected="false">
+                                        <i class="fas fa-address-book"></i> Contact
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="education-tab" data-toggle="tab" href="#education" role="tab" aria-controls="education" aria-selected="false">
+                                        <i class="fas fa-graduation-cap"></i> Education
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="professional-tab" data-toggle="tab" href="#professional" role="tab" aria-controls="professional" aria-selected="false">
+                                        <i class="fas fa-briefcase"></i> Professional
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="documents-tab" data-toggle="tab" href="#documents" role="tab" aria-controls="documents" aria-selected="false">
+                                        <i class="fas fa-file-alt"></i> Documents
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Profile Tabs Content -->
                         <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-4 text-center">
-                                    <div class="profile-img-container">
-                                        <?php if(!empty($practitioner_data['practitioner_profile_image'])): ?>
-                                            <img src="uploads/<?php echo htmlspecialchars($practitioner_data['practitioner_profile_image']); ?>" alt="Profile" class="profile-img">
-                                        <?php else: ?>
-                                            <img src="https://via.placeholder.com/150" alt="Profile" class="profile-img">
-                                        <?php endif; ?>
-                                    </div>
-                                    <h4 class="mb-1"><?php echo htmlspecialchars($practitioner_data['practitioner_name']); ?></h4>
-                                    <p class="text-muted"><?php echo htmlspecialchars($practitioner_data['registration_type']); ?></p>
-                                    <div class="mb-3">
-                                        <span class="badge badge-success">Active</span>
-                                    </div>
-                                </div>
-                                <div class="col-md-8">
+                            <div class="tab-content profile-tab-content" id="profileTabsContent">
+                                <!-- Personal Info Tab -->
+                                <div class="tab-pane fade show active" id="personal" role="tabpanel" aria-labelledby="personal-tab">
+                                    <h5 class="section-title">Personal Information</h5>
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <div class="info-item">
-                                                <div class="info-label">Registration Number</div>
-                                                <div class="info-value"><?php echo htmlspecialchars($practitioner_data['registration_number']); ?></div>
+                                            <div class="form-group">
+                                                <label>Full Name</label>
+                                                <p class="form-control-static"><?php echo $user_name; ?></p>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="info-item">
-                                                <div class="info-label">Registration Type</div>
-                                                <div class="info-value"><?php echo htmlspecialchars($practitioner_data['registration_type']); ?></div>
+                                            <div class="form-group">
+                                                <label>Date of Birth</label>
+                                                <p class="form-control-static"><?php echo isset($practitioner_data['practitioner_birth_date']) ? date('d F Y', strtotime($practitioner_data['practitioner_birth_date'])) : '15 June 1985'; ?></p>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="info-item">
-                                                <div class="info-label">Date of Birth</div>
-                                                <div class="info-value"><?php echo date('d M Y', strtotime($practitioner_data['practitioner_birth_date'])); ?></div>
+                                            <div class="form-group">
+                                                <label>Gender</label>
+                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_gender'] ?? 'Male'; ?></p>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="info-item">
-                                                <div class="info-label">Gender</div>
-                                                <div class="info-value"><?php echo htmlspecialchars($practitioner_data['practitioner_gender']); ?></div>
+                                            <div class="form-group">
+                                                <label>Blood Group</label>
+                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_blood_group'] ?? 'O+'; ?></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Nationality</label>
+                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_nationality'] ?? 'Indian'; ?></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Marital Status</label>
+                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_marital_status'] ?? 'Married'; ?></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Contact Info Tab -->
+                                <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
+                                    <h5 class="section-title">Contact Information</h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Email Address</label>
+                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_email_id'] ?? 'practitioner@example.com'; ?></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Mobile Number</label>
+                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_mobile_number'] ?? '+91 9876543210'; ?></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Alternative Number</label>
+                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_alternative_number'] ?? '+91 8765432109'; ?></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <label>Current Address</label>
+                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_address'] ?? '123 Main Street, Apartment 4B, Bangalore, Karnataka - 560001'; ?></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <label>Permanent Address</label>
+                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_permanent_address'] ?? '456 Park Avenue, House No. 7, Mysore, Karnataka - 570001'; ?></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Education Tab -->
+                                <div class="tab-pane fade" id="education" role="tabpanel" aria-labelledby="education-tab">
+                                    <h5 class="section-title">Educational Qualifications</h5>
+                                    
+                                    <div class="education-item">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>Bachelor of Homeopathic Medicine and Surgery (BHMS)</h6>
+                                                <p>Government Homeopathic Medical College</p>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <p class="text-muted">2005 - 2010</p>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <p class="text-success">First Class</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="education-item">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>MD in Homeopathy</h6>
+                                                <p>National Institute of Homeopathy</p>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <p class="text-muted">2010 - 2013</p>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <p class="text-success">Distinction</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="education-item">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>Certificate in Advanced Clinical Homeopathy</h6>
+                                                <p>International Academy of Classical Homeopathy</p>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <p class="text-muted">2015</p>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <p class="text-success">Completed</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Professional Tab -->
+                                <div class="tab-pane fade" id="professional" role="tabpanel" aria-labelledby="professional-tab">
+                                    <h5 class="section-title">Professional Experience</h5>
+                                    
+                                    <div class="professional-item">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>Senior Homeopathic Physician</h6>
+                                                <p>City Homeopathic Hospital</p>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <p class="text-muted">2018 - Present</p>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <p class="text-success">Full-time</p>
+                                            </div>
+                                        </div>
+                                        <p>Providing comprehensive homeopathic treatment for various chronic and acute conditions.</p>
+                                    </div>
+                                    
+                                    <div class="professional-item">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>Homeopathic Consultant</h6>
+                                                <p>Wellness Homeopathy Clinic</p>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <p class="text-muted">2013 - 2018</p>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <p class="text-success">Full-time</p>
+                                            </div>
+                                        </div>
+                                        <p>Managed patient care and treatment for a wide range of health conditions using homeopathic principles.</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Documents Tab -->
+                                <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
+                                    <h5 class="section-title">Uploaded Documents</h5>
+                                    
+                                    <div class="document-item">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-1">
+                                                <i class="fas fa-file-pdf text-danger fa-2x"></i>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <h6>BHMS Degree Certificate</h6>
+                                                <p class="text-muted small mb-0">Uploaded on: 15 Jan 2022</p>
+                                            </div>
+                                            <div class="col-md-3 text-right">
+                                                <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i> View</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="document-item">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-1">
+                                                <i class="fas fa-file-pdf text-danger fa-2x"></i>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <h6>MD Certificate</h6>
+                                                <p class="text-muted small mb-0">Uploaded on: 15 Jan 2022</p>
+                                            </div>
+                                            <div class="col-md-3 text-right">
+                                                <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i> View</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="document-item">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-1">
+                                                <i class="fas fa-file-image text-primary fa-2x"></i>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <h6>Registration Certificate</h6>
+                                                <p class="text-muted small mb-0">Uploaded on: 16 Jan 2022</p>
+                                            </div>
+                                            <div class="col-md-3 text-right">
+                                                <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i> View</a>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Contact Information Tab -->
-                <div class="tab-pane fade" id="contact" role="tabpanel">
-                    <div class="card">
-                        <div class="card-body">
-                            <?php if($address_data): ?>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <div class="info-label">Address Line 1</div>
-                                            <div class="info-value"><?php echo htmlspecialchars($address_data['address_line1']); ?></div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <div class="info-label">Address Line 2</div>
-                                            <div class="info-value"><?php echo htmlspecialchars($address_data['address_line2']); ?></div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <div class="info-label">City</div>
-                                            <div class="info-value"><?php echo htmlspecialchars($address_data['city']); ?></div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <div class="info-label">State</div>
-                                            <div class="info-value"><?php echo htmlspecialchars($address_data['state']); ?></div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <div class="info-label">Pincode</div>
-                                            <div class="info-value"><?php echo htmlspecialchars($address_data['pincode']); ?></div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <div class="info-label">Phone</div>
-                                            <div class="info-value"><?php echo htmlspecialchars($practitioner_data['practitioner_mobile_number']); ?></div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <div class="info-label">Email</div>
-                                            <div class="info-value"><?php echo htmlspecialchars($practitioner_data['practitioner_email_id']); ?></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php else: ?>
-                                <div class="text-center py-4">
-                                    <i class="fas fa-info-circle text-muted mb-3" style="font-size: 2rem;"></i>
-                                    <p class="text-muted">No contact information available</p>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Education Tab -->
-                <div class="tab-pane fade" id="education" role="tabpanel">
-                    <div class="card">
-                        <div class="card-body">
-                            <?php if($education_data): ?>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <div class="info-label">Education Name</div>
-                                            <div class="info-value"><?php echo htmlspecialchars($education_data['education_name']); ?></div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <div class="info-label">Year of Passing</div>
-                                            <div class="info-value"><?php echo htmlspecialchars($education_data['education_year_of_passing']); ?></div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <div class="info-label">College</div>
-                                            <div class="info-value"><?php echo htmlspecialchars($education_data['college_name']); ?></div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <div class="info-label">University</div>
-                                            <div class="info-value"><?php echo htmlspecialchars($education_data['university_name']); ?></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php else: ?>
-                                <div class="text-center py-4">
-                                    <i class="fas fa-info-circle text-muted mb-3" style="font-size: 2rem;"></i>
-                                    <p class="text-muted">No education information available</p>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Remarks Tab -->
-                <div class="tab-pane fade" id="remarks" role="tabpanel">
-                    <div class="card">
-                        <div class="card-body">
-                            <?php if($remarks_result->num_rows > 0): ?>
-                                <?php while($remark = $remarks_result->fetch_assoc()): ?>
-                                    <div class="info-item">
-                                        <div class="info-label"><?php echo date('d M Y, h:i A', strtotime($remark['created_at'])); ?></div>
-                                        <div class="info-value"><?php echo htmlspecialchars($remark['remark_text']); ?></div>
-                                    </div>
-                                <?php endwhile; ?>
-                            <?php else: ?>
-                                <div class="text-center py-4">
-                                    <i class="fas fa-info-circle text-muted mb-3" style="font-size: 2rem;"></i>
-                                    <p class="text-muted">No remarks available</p>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Documents Tab -->
-                <div class="tab-pane fade" id="documents" role="tabpanel">
-                    <div class="card">
-                        <div class="card-body">
-                            <?php if($documents_result->num_rows > 0): ?>
-                                <?php while($document = $documents_result->fetch_assoc()): ?>
-                                    <div class="document-item">
-                                        <div class="document-icon">
-                                            <i class="fas fa-file-pdf"></i>
-                                        </div>
-                                        <div>
-                                            <div class="info-label"><?php echo htmlspecialchars($document['document_name']); ?></div>
-                                            <div class="info-value">Uploaded on <?php echo date('d M Y', strtotime($document['uploaded_at'])); ?></div>
-                                        </div>
-                                        <div class="ml-auto">
-                                            <a href="uploads/<?php echo htmlspecialchars($document['document_path']); ?>" class="btn btn-sm btn-primary" target="_blank">
-                                                <i class="fas fa-download"></i> Download
-                                            </a>
-                                        </div>
-                                    </div>
-                                <?php endwhile; ?>
-                            <?php else: ?>
-                                <div class="text-center py-4">
-                                    <i class="fas fa-info-circle text-muted mb-3" style="font-size: 2rem;"></i>
-                                    <p class="text-muted">No documents available</p>
-                                </div>
-                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -604,16 +696,33 @@ $education_data = $education_result->fetch_assoc();
     <script>
         // Preloader
         window.addEventListener('load', function() {
-            const preloader = document.querySelector('.preloader');
-            preloader.classList.add('fade-out');
+            const preloader = document.querySelector('.preloader-container');
             setTimeout(() => {
-                preloader.style.display = 'none';
-            }, 500);
+                preloader.style.opacity = '0';
+                preloader.style.visibility = 'hidden';
+            }, 10);
         });
 
-        // Initialize Bootstrap tooltips
+        // Initialize Bootstrap tooltips and tabs
         $(function () {
-            $('[data-toggle="tooltip"]').tooltip()
+            $('[data-toggle="tooltip"]').tooltip();
+            
+            // Ensure tabs work correctly
+            $('#profileTabs a').on('click', function (e) {
+                e.preventDefault();
+                $(this).tab('show');
+            });
+            
+            // Handle URL with hash for direct tab access
+            if (window.location.hash) {
+                const hash = window.location.hash;
+                $('#profileTabs a[href="' + hash + '"]').tab('show');
+            }
+            
+            // Change URL hash when tab changes
+            $('#profileTabs a').on('shown.bs.tab', function (e) {
+                window.location.hash = e.target.hash;
+            });
         });
     </script>
 </body>

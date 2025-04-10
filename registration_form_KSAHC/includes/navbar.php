@@ -1,4 +1,5 @@
 <!-- KSAHC Portal Navigation Bar -->
+ <link rel="stylesheet" href="css/navbar.css">
 <nav class="navbar navbar-expand-lg navbar-light fixed-top">
     <div class="container">
         <a class="navbar-brand" href="welcome.php">
@@ -32,7 +33,7 @@
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown">
-                        <i class="fas fa-user-circle"></i> <?php echo htmlspecialchars($user_name); ?>
+                        <i class="fas fa-user-circle"></i> <?php echo htmlspecialchars($user_name ?? 'User'); ?>
                     </a>
                     <div class="dropdown-menu dropdown-menu-right">
                         <a class="dropdown-item" href="profile.php">

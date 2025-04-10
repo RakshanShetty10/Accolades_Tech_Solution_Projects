@@ -53,6 +53,7 @@ if (!$president_data) {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <!-- <link rel="stylesheet" href="css/navbar.css"> -->
     <style>
         :root {
             --primary-color: #2A5C9D;
@@ -76,7 +77,7 @@ if (!$president_data) {
             margin: 0;
             padding: 0;
             overflow-x: hidden;
-            padding-top: 60px;
+            padding-top: 70px; /* Updated to match navbar height */
             color: #444;
         }
 
@@ -478,63 +479,6 @@ if (!$president_data) {
         
         .page-header .main-title {
             margin-bottom: 0;
-        }
-        
-        /* Navbar Styles */
-        .navbar {
-            background-color: white;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
-            z-index: 1000;
-            padding: 12px 0;
-        }
-
-        .navbar-brand img {
-            height: 40px;
-            margin-right: 10px;
-        }
-
-        .navbar-nav .nav-link {
-            color: var(--dark-color);
-            padding: 0.5rem 1rem;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-
-        .navbar-nav .nav-link:hover,
-        .navbar-nav .nav-link.active {
-            color: var(--primary-color);
-        }
-
-        .navbar-nav .nav-link i {
-            margin-right: 5px;
-        }
-
-        .dropdown-menu {
-            border: none;
-            box-shadow: 0 0.15rem 1.5rem 0 rgba(58, 59, 69, 0.15);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .dropdown-item {
-            padding: 0.7rem 1.5rem;
-            transition: all 0.2s ease;
-        }
-        
-        .dropdown-item:hover {
-            background: rgba(42, 92, 157, 0.05);
-            color: var(--primary-color);
-        }
-
-        .dropdown-item i {
-            margin-right: 8px;
-            width: 16px;
-            text-align: center;
-            color: var(--primary-color);
-        }
-
-        .dropdown-divider {
-            margin: 0.5rem 0;
         }
         
         /* Media Queries */

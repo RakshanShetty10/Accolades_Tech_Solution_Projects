@@ -115,14 +115,19 @@ if (!empty($_GET['username']) && empty($error)) {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            flex-direction: column;
+            /* align-items: center; */
+            /* justify-content: center; */
+            /* padding: 20px; */
         }
         
         .login-container {
-            max-width: 500px;
+            max-width: 600px;
             width: 100%;
+            margin: auto;
+            margin-top: 6rem;
+            flex-grow: 1;
+            
         }
         
         .card {
@@ -142,7 +147,7 @@ if (!empty($_GET['username']) && empty($error)) {
             background: var(--primary-color);
             color: white;
             text-align: center;
-            padding: 25px 15px;
+            padding: 15px 5px;
             border-bottom: none;
         }
         
@@ -291,6 +296,7 @@ if (!empty($_GET['username']) && empty($error)) {
     </style>
 </head>
 <body>
+    <?php include 'includes/navbar.php'; ?>
     <div class="login-container">
         <div class="card">
             <div class="card-header">
@@ -351,15 +357,17 @@ if (!empty($_GET['username']) && empty($error)) {
                 
                 <div class="info-text">
                     <p>If you're logging in for the first time, use your date of birth as your password.</p>
-                    <p>Having trouble? Contact support at <a href="mailto:support@ksahc.in">support@ksahc.in</a></p>
+                    <!-- <p>Having trouble? Contact support at <a href="mailto:support@ksahc.in">support@ksahc.in</a></p> -->
                 </div>
             </div>
         </div>
-        <div class="footer-text mt-3">
+        <!-- <div class="footer-text mt-3">
             <p>&copy; <?php echo date('Y'); ?> Karnataka State Allied & Healthcare Council. All rights reserved.</p>
-        </div>
+        </div> -->
+
     </div>
-    
+    <?php include 'includes/footer.php'; ?>
+
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>

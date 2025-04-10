@@ -136,14 +136,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            flex-direction: column;
+            /* align-items: center; */
+            /* justify-content: center; */
+            /* padding: 20px; */
         }
         
         .reset-container {
-            max-width: 550px;
+            max-width: 650px;
             width: 100%;
+            margin: auto;
+            margin-top: 6rem;
         }
         
         .card {
@@ -352,6 +355,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
+    <?php include 'includes/navbar.php'; ?>
     <div class="reset-container">
         <div class="card">
             <div class="card-header">
@@ -373,7 +377,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 <?php else: ?>
                     <div class="welcome-message">
-                        <h5><i class="fas fa-user-shield mr-2"></i>Welcome, <?php echo htmlspecialchars($name); ?>!</h5>
+                        <!-- <h5><i class="fas fa-user-shield mr-2"></i>Welcome, <?php echo htmlspecialchars($name); ?>!</h5> -->
                         <p class="mb-0"><?php echo $is_first_login ? 'This is your first login. Please create a new password to secure your account.' : 'Please enter your current password and set a new password.'; ?></p>
                     </div>
                     
@@ -395,15 +399,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         <?php endif; ?>
                         
-                        <div class="password-criteria">
-                            <h5><i class="fas fa-shield-alt mr-2"></i>Password Requirements</h5>
-                            <ul>
-                                <li>At least 8 characters long</li>
-                                <li>Should include uppercase and lowercase letters</li>
-                                <li>Include at least one number</li>
-                                <li>Include at least one special character</li>
-                            </ul>
-                        </div>
+                            <!-- <div class="password-criteria">
+                                <h5><i class="fas fa-shield-alt mr-2"></i>Password Requirements</h5>
+                                <ul>
+                                    <li>At least 8 characters long</li>
+                                    <li>Should include uppercase and lowercase letters</li>
+                                    <li>Include at least one number</li>
+                                    <li>Include at least one special character</li>
+                                </ul>
+                            </div> -->
                         
                         <div class="form-group">
                             <label for="new_password"><i class="fas fa-lock mr-2"></i>New Password</label>
@@ -449,10 +453,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
             </div>
         </div>
-        <div class="footer-text mt-3">
+        <!-- <div class="footer-text mt-3">
             <p>&copy; <?php echo date('Y'); ?> Karnataka State Allied & Healthcare Council. All rights reserved.</p>
-        </div>
+        </div> -->
     </div>
+    <?php include 'includes/footer.php'; ?>
     
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>

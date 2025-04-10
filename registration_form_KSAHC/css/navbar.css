@@ -1,0 +1,89 @@
+/* KSAHC Navbar Styles */
+.navbar {
+    background-color: white;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    z-index: 1000;
+    padding: 12px 0;
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    color: var(--primary-color, #2A5C9D);
+}
+
+.navbar-brand img {
+    height: 40px;
+    margin-right: 10px;
+}
+
+.navbar-nav .nav-link {
+    color: var(--dark-color, #2C3E50);
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link.active {
+    color: var(--primary-color, #2A5C9D);
+}
+
+.navbar-nav .nav-link.active:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0.8rem;
+    right: 0.8rem;
+    height: 3px;
+    background: var(--primary-color, #2A5C9D);
+    border-radius: 3px 3px 0 0;
+}
+
+.navbar-nav .nav-link i {
+    margin-right: 5px;
+}
+
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 0.15rem 1.5rem 0 rgba(58, 59, 69, 0.15);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.dropdown-item {
+    padding: 0.7rem 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background: rgba(42, 92, 157, 0.05);
+    color: var(--primary-color, #2A5C9D);
+}
+
+.dropdown-item i {
+    margin-right: 8px;
+    width: 16px;
+    text-align: center;
+    color: var(--primary-color, #2A5C9D);
+}
+
+.dropdown-divider {
+    margin: 0.5rem 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+    .navbar-nav .nav-link.active:after {
+        display: none;
+    }
+    
+    .dropdown-menu {
+        box-shadow: none;
+        border: 1px solid rgba(0,0,0,0.05);
+        margin-top: 0;
+    }
+} 
