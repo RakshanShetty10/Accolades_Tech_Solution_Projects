@@ -1,681 +1,421 @@
 <?php
-// Start session
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
+require_once('admin/vendor-qr/autoload.php');
+$options = new QROptions(
+  [
+    'eccLevel' => QRCode::ECC_L,
+    'outputType' => QRCode::OUTPUT_MARKUP_SVG,
+    'version' => 5,
+  ]
+);
+
 session_start();
-
-// Database connection
 require_once 'config/config.php';
-
-// Check if user is logged in
-if(!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
-    // Redirect to login page if not logged in
-    header("Location: login.php");
-    exit;
+if (!defined('SITE_URL')) {
+    define('SITE_URL', 'http://' . $_SERVER['HTTP_HOST'] . '/Accolades_Tech_Solution_Projects/registration_form_KSAHC/');
 }
+$site_url = SITE_URL;
 
-// Get user data
-$user_id = $_SESSION['user_id'];
-$username = $_SESSION['username'];
-$user_name = $_SESSION['user_name'] ?? 'Practitioner';
+date_default_timezone_set('Asia/Kolkata');
 
-// Fetch practitioner information with profile image
-$practitioner_sql = "SELECT p.*, rt.registration_type 
-                    FROM practitioner p
-                    LEFT JOIN registration_type_master rt ON p.registration_type_id = rt.registration_type_id
-                    WHERE p.practitioner_id = ?";
-$practitioner_stmt = $conn->prepare($practitioner_sql);
-$practitioner_stmt->bind_param("i", $user_id);
-$practitioner_stmt->execute();
-$practitioner_result = $practitioner_stmt->get_result();
-$practitioner_data = $practitioner_result->fetch_assoc();
+$id = $_SESSION['user_id'];
+$resDentists = mysqli_query($conn, "SELECT * FROM practitioner WHERE practitioner_id = '$id'");
+$rowDentists = mysqli_fetch_assoc($resDentists);
+$id_param = base64_encode(urlencode($id));
+$qrcode = (new QRCode($options))->render($site_url.'dentist-profile.php?source='.$id_param);
 
-// Fetch current president information from past_president table
-$president_sql = "SELECT * FROM past_president WHERE president_status = 'Active' ORDER BY president_id DESC LIMIT 1";
-$president_result = $conn->query($president_sql);
-$president_data = $president_result->fetch_assoc();
-
-// Default president information if none found in database
-if (!$president_data) {
-    $president_data = [
-        'president_name' => 'Dr. Rajesh Kumar',
-        'president_from_date' => date('Y-m-d'),
-        'president_to_date' => date('Y-m-d', strtotime('+1 year')),
-        'president_image' => 'president.jpg'
-    ];
-}
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile | KSAHC Portal</title>
+    <title><?php echo $site_full ?? 'Site'; ?> - Dentist Profile</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="css/navbar.css">
-    <link rel="stylesheet" href="css/profile.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
     <style>
-        :root {
-            --primary-color: #2A5C9D;
-            --secondary-color: #4A90E2;
-            --accent-color: #33b679;
-            --dark-color: #2C3E50;
-            --light-color: #f8f9fc;
-            --border-color: #e3e6f0;
-            --gradient-start: #2A5C9D;
-            --gradient-end: #1E3F75;
-            --card-shadow: 0 10px 20px rgba(0,0,0,0.08);
-            --hover-shadow: 0 15px 30px rgba(0,0,0,0.12);
-        }
-        
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #F5F7FA;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-            padding-top: 60px;
-            color: #444;
-        }
+    :root {
+        --primary-color: #2A5C9D;
+        --secondary-color: #4A90E2;
+        --accent-color: #33b679;
+        --dark-color: #2C3E50;
+        --light-color: #f8f9fc;
+        --border-color: #e3e6f0;
+        --gradient-start: #2A5C9D;
+        --gradient-end: #1E3F75;
+        --card-shadow: 0 10px 20px rgba(0,0,0,0.08);
+        --hover-shadow: 0 15px 30px rgba(0,0,0,0.12);
+    }
+    
+    body {
+        font-family: 'Poppins', sans-serif;
+        background-color: #F5F7FA;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        padding-top: 60px;
+        color: #444;
+    }
 
-        /* Preloader Styles */
-        .preloader-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            transition: opacity 0.5s, visibility 0.5s;
-        }
+    .nav-tabs {
+        border-bottom: 1px solid #dee2e6;
+        margin-bottom: 1rem;
+    }
 
-        .logo-container {
-            position: relative;
-            width: 200px;
-            height: 200px;
-        }
+    .nav-tabs .nav-link {
+        border: none;
+        padding: 15px 25px;
+        color: #666;
+        font-weight: 500;
+        border-radius: 0;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background: #f7f7f7;
+        margin-right: 2px;
+    }
 
-        .logo {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            animation: pulse 2s infinite alternate;
-        }
+    .nav-tabs .nav-link:hover {
+        color: var(--primary-color);
+        background: rgba(42, 92, 157, 0.05);
+    }
 
-        .spinner {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: 4px solid transparent;
-            border-radius: 50%;
-            border-top: 4px solid var(--primary-color);
-            border-right: 4px solid var(--primary-color);
-            animation: spin 1.5s linear infinite;
-        }
+    .nav-tabs .nav-link.active {
+        color: white;
+        background-color: #192735;
+    }
 
-        .spinner-inner {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            right: 15px;
-            bottom: 15px;
-            border: 3px solid transparent;
-            border-radius: 50%;
-            border-top: 3px solid var(--secondary-color);
-            border-left: 3px solid var(--secondary-color);
-            animation: spin-reverse 1.2s linear infinite;
-        }
+    .tab-content {
+        padding: 20px 0;
+    }
 
-        .loading-text {
-            margin-top: 30px;
-            color: var(--primary-color);
-            font-size: 18px;
-            letter-spacing: 3px;
-            position: relative;
-        }
+    .section-title {
+        color: var(--primary-color);
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border-color);
+    }
 
-        .loading-dots {
-            display: inline-block;
-            width: 30px;
-            text-align: left;
-        }
+    .form-group {
+        margin-bottom: 20px;
+    }
 
-        .loading-dot {
-            animation: dot-fade 1.5s infinite;
-            animation-delay: calc(0.3s * var(--dot-index));
-            opacity: 0;
-        }
+    .form-group label {
+        font-weight: 500;
+        color: #666;
+        margin-bottom: 5px;
+    }
 
-        .progress-bar {
-            width: 250px;
-            height: 6px;
-            background: rgba(78, 115, 223, 0.2);
-            border-radius: 3px;
-            margin-top: 20px;
-            overflow: hidden;
-        }
+    .form-control-static {
+        color: #333;
+        font-size: 16px;
+    }
 
-        .progress {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-            border-radius: 3px;
-            animation: progress 3s ease-in-out infinite;
+    @media (max-width: 991.98px) {
+        .nav-tabs .nav-link {
+            padding: 12px 20px;
+            font-size: 14px;
         }
+    }
 
-        .wings-effect {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 180px;
-            height: 180px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%);
-            opacity: 0;
-            animation: wings-glow 3s infinite;
+    @media (max-width: 767.98px) {
+        .nav-tabs .nav-link {
+            padding: 10px 15px;
+            font-size: 13px;
         }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .tab-content {
+            padding: 15px;
         }
-
-        @keyframes spin-reverse {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(-360deg); }
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(0.95); opacity: 0.7; }
-            100% { transform: scale(1.05); opacity: 1; }
-        }
-
-        @keyframes dot-fade {
-            0%, 100% { opacity: 0; }
-            50% { opacity: 1; }
-        }
-
-        @keyframes progress {
-            0% { width: 5%; }
-            50% { width: 75%; }
-            100% { width: 95%; }
-        }
-
-        @keyframes wings-glow {
-            0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-            50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.2); }
-        }
-
-        /* Main Content Styles */
-        .main-content {
-            padding: 30px 0;
-            flex: 1;
-        }
-        
-        .main-title {
-            color: var(--primary-color);
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--primary-color);
-            display: inline-block;
-        }
-        
-        /* Integrated Profile & Welcome Message Card */
-
-        /* Info Card */
-        .info-card {
-            border-radius: 12px;
-            overflow: hidden;
-            background: white;
-            margin-bottom: 25px;
-            box-shadow: var(--card-shadow);
-            transition: box-shadow 0.3s ease;
-        }
-        
-        .info-card:hover {
-            box-shadow: var(--hover-shadow);
-        }
-        
-        .info-card-header {
-            background: linear-gradient(to right, var(--gradient-start), var(--gradient-end));
-            color: white;
-            padding: 18px 25px;
-        }
-        
-        .info-card-header h5 {
-            margin-bottom: 0;
-            font-weight: 600;
-        }
-        
-        .info-card-body {
-            padding: 0;
-        }
-        
-        .quick-links {
-            list-style: none;
-            padding-left: 0;
-            margin-bottom: 0;
-        }
-        
-        .quick-links li {
-            transition: all 0.2s ease;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
-        
-        .quick-links li:last-child {
-            border-bottom: none;
-        }
-        
-        .quick-links li a {
-            color: #444;
-            display: block;
-            padding: 15px 20px;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-        
-        .quick-links li a::after {
-            content: "\f054";
-            font-family: "Font Awesome 5 Free";
-            font-weight: 900;
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 12px;
-            opacity: 0;
-            color: var(--secondary-color);
-            transition: all 0.2s ease;
-        }
-        
-        .quick-links li:hover {
-            background-color: rgba(74, 144, 226, 0.05);
-        }
-        
-        .quick-links li:hover a {
-            color: var(--primary-color);
-            padding-left: 25px;
-            text-decoration: none;
-        }
-        
-        .quick-links li:hover a::after {
-            opacity: 1;
-            right: 15px;
-        }
-        
-        .quick-links li a i {
-            margin-right: 12px;
-            color: var(--primary-color);
-            width: 20px;
-            text-align: center;
-            background: rgba(42, 92, 157, 0.1);
-            padding: 7px;
-            border-radius: 5px;
-            transition: all 0.2s ease;
-        }
-        
-        .quick-links li:hover a i {
-            background: rgba(42, 92, 157, 0.2);
-        }
-
-        /* Page header */
-        .page-header {
-            padding: 0 15px 15px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-        }
-        
-        .page-header .main-title {
-            margin-bottom: 0;
-        }
-        
-       
-        /* Media Queries */
-        @media (max-width: 991.98px) {
-            .profile-welcome-body {
-                flex-direction: column;
-            }
-            
-            .profile-section, .welcome-section {
-                width: 100%;
-            }
-            
-            .profile-section {
-                border-right: none;
-                border-bottom: 1px solid rgba(0,0,0,0.05);
-                padding-bottom: 30px;
-            }
-        }
-        
-        @media (max-width: 767.98px) {
-            .page-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
+    }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
+
 <body>
-    <!-- Include Navbar -->
-    <?php include 'includes/navbar.php'; ?>
+    <?php
+    if (empty($_SESSION['user_id'])) {
+        echo "<script>Swal.fire({text: 'Kindly login to proceed!', icon: 'error'}).then(function(){window.location = 'login.php';});</script>";
+    } else {
+        if (isset($_POST['address_request'])) {
+            $description = addslashes(trim($_POST['description']));
+            if ($_FILES["image"]["size"] <= 2097152) {
+                $imagePath = time() . "." . pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+                if (move_uploaded_file($_FILES['image']['tmp_name'], "admin/images/address/" . $imagePath)) {
+                    $date = date('Y-m-d H:i:s');
+                    if (mysqli_query($conn, "INSERT INTO address_change (practitioner_id, change_description, change_file, change_created_on, change_status) VALUES ('$id', '$description', '$imagePath', '$date', 'Initiated')")) {
+                        echo "<script>Swal.fire({text: 'Your request has been sent successfully!', icon: 'success'}).then(function(){window.location = 'profile.php';});</script>";
+                    } else {
+                        echo "<script>Swal.fire({text: 'Unable to process your request!', icon: 'error'});</script>";
+                    }
+                } else {
+                    echo "<script>Swal.fire({text: 'Unable to process your request!', icon: 'error'});</script>";
+                }
+            } else {
+                echo "<script>Swal.fire({text: 'Your file is too large!', icon: 'error'});</script>";
+            }
+        }
 
-    <!-- Preloader -->
-    <div class="preloader-container">
-        <div class="logo-container">
-            <div class="spinner"></div>
-            <div class="spinner-inner"></div>
-            <div class="wings-effect"></div>
-            <img src="ksahc_logo.png" alt="KSAHC Logo" class="logo">
-        </div>
-        <div class="progress-bar">
-            <div class="progress"></div>
-        </div>
-        <div class="loading-text">
-            LOADING<span class="loading-dots">
-                <span class="loading-dot" style="--dot-index: 1">.</span>
-                <span class="loading-dot" style="--dot-index: 2">.</span>
-                <span class="loading-dot" style="--dot-index: 3">.</span>
-            </span>
-        </div>
-    </div>
+        if (isset($_POST['update_professional'])) {
+            $date = date('Y-m-d H:i:s');
+            $secondary_number = addslashes(trim($_POST['secondary_number']));
+            $mobile_number = addslashes(trim($_POST['mobile_number']));
+            $residential_country = addslashes(trim($_POST['residential_country']));
+            $postal_code = addslashes(trim($_POST['postal_code']));
+            $residential_state = addslashes(trim($_POST['residential_state']));
+            $residential_city = addslashes(trim($_POST['residential_city']));
+            $address_line1 = addslashes(trim($_POST['address_line1']));
+            $address_line2 = addslashes(trim($_POST['address_line2']));
+            $type = 'Professional';
+            $updated_by = 'Self';
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="container">
-            <div class="page-header">
-                <h4 class="main-title">My Profile</h4>
-            </div>
+            $sql = "UPDATE practitioner_address SET
+                practitioner_address_line1 = ?,
+                practitioner_address_line2 = ?,
+                practitioner_address_city = ?,
+                state_name = ?,
+                practitioner_address_pincode = ?,
+                country_name = ?,
+                practitioner_address_phoneno = ?,
+                practitioner_address_last_updated_by = ?,
+                practitioner_address_last_updated_on = ?,
+                practitioner_address_secondary_phoneno = ?
+                WHERE practitioner_id = ? AND practitioner_address_type = ?";
+            $stmt = mysqli_prepare($conn, $sql);
+            mysqli_stmt_bind_param($stmt, "ssssssssssss", $address_line1, $address_line2, 
+                $residential_city, $residential_state, $postal_code, $residential_country, $mobile_number, 
+                $updated_by, $date, $secondary_number, $id, $type);
             
-            <!-- Main Sections -->
-            <div class="row">
-                <!-- Left Column - Quick Links -->
-                <div class="col-lg-4">
-                    <div class="info-card">
-                        <div class="info-card-header">
-                            <h5>Quick Links</h5>
-                        </div>
-                        <div class="info-card-body">
-                            <ul class="quick-links">
-                                <li><a href="profile.php"><i class="fas fa-user-circle"></i> My Profile</a></li>
-                                <li><a href="#"><i class="fas fa-file-alt"></i> My Documents</a></li>
-                                <li><a href="#"><i class="fas fa-certificate"></i> Certificates</a></li>
-                                <li><a href="#"><i class="fas fa-sync"></i> Renewal</a></li>
-                                <li><a href="reset_password.php"><i class="fas fa-key"></i> Change Password</a></li>
-                                <li><a href="#"><i class="fas fa-question-circle"></i> Help & Support</a></li>
-                            </ul>
+            if (mysqli_stmt_execute($stmt)) {
+                echo "<script>Swal.fire({text: 'Your address updated successfully!', icon: 'success'}).then(function(){window.location = 'profile.php';});</script>";
+            } else {
+                echo "<script>Swal.fire({text: 'Unable to process your request!', icon: 'error'});</script>";
+            }
+        }
+    ?>
+    <div class="boxed_wrapper ltr">
+        <section class="sidebar-page-container pt-5 pb-5 border-top">
+            <div class="auto-container">
+                <div class="row clearfix">
+                    <div class="col-lg-3 col-md-12 col-sm-12 sidebar-side">
+                        <div class="blog-sidebar ml-3">
+                            <div class="sidebar-widget category-widget">
+                                <div class="widget-content">
+                                    <ul class="category-list clearfix">
+                                        <li><a href="welcome.php">Welcome</a></li>
+                                        <li><h6><a href="profile.php">My Profile</a></h6></li>
+                                        <li><a href="receipts.php">Receipts</a></li>
+                                        <li><a href="payments.php">Payments</a></li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <!-- Profile Summary Card -->
-                  
-                </div>
-                
-                <!-- Right Column - Profile Details -->
-                <div class="col-lg-8">
-                    <div class="card profile-card">
-                        <!-- Profile Tabs Navigation -->
-                        <div class="card-header p-0">
-                            <ul class="nav nav-tabs profile-tabs" id="profileTabs" role="tablist">
-                                <li class="nav-item">
-                                    <a class="nav-link active" id="personal-tab" data-toggle="tab" href="#personal" role="tab" aria-controls="personal" aria-selected="true">
-                                        <i class="fas fa-user"></i> Personal Info
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="contact-tab" data-toggle="tab" href="#contact" role="tab" aria-controls="contact" aria-selected="false">
-                                        <i class="fas fa-address-book"></i> Contact
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="education-tab" data-toggle="tab" href="#education" role="tab" aria-controls="education" aria-selected="false">
-                                        <i class="fas fa-graduation-cap"></i> Education
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="professional-tab" data-toggle="tab" href="#professional" role="tab" aria-controls="professional" aria-selected="false">
-                                        <i class="fas fa-briefcase"></i> Professional
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="documents-tab" data-toggle="tab" href="#documents" role="tab" aria-controls="documents" aria-selected="false">
-                                        <i class="fas fa-file-alt"></i> Documents
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                        
-                        <!-- Profile Tabs Content -->
-                        <div class="card-body">
-                            <div class="tab-content profile-tab-content" id="profileTabsContent">
-                                <!-- Personal Info Tab -->
-                                <div class="tab-pane fade show active" id="personal" role="tabpanel" aria-labelledby="personal-tab">
-                                    <h5 class="section-title">Personal Information</h5>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Full Name</label>
-                                                <p class="form-control-static"><?php echo $user_name; ?></p>
+
+                    <div class="col-lg-9 col-md-12 col-sm-12 content-side pl-4">
+                        <div class="blog-standard-content">
+                            <div class="news-block-three">
+                                <div class="inner-box">
+                                    <div class="lower-content">
+                                        <nav>
+                                            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                                                <button class="nav-link active" id="nav-one-tab" data-bs-toggle="tab" data-bs-target="#nav-one" type="button" role="tab" aria-controls="nav-one" aria-selected="true">Personal Info</button>
+                                                <button class="nav-link" id="nav-two-tab" data-bs-toggle="tab" data-bs-target="#nav-two" type="button" role="tab" aria-controls="nav-two" aria-selected="false">Contact Info</button>
+                                                <button class="nav-link" id="nav-three-tab" data-bs-toggle="tab" data-bs-target="#nav-three" type="button" role="tab" aria-controls="nav-three" aria-selected="false">Educational Info</button>
+                                                <button class="nav-link" id="nav-four-tab" data-bs-toggle="tab" data-bs-target="#nav-four" type="button" role="tab" aria-controls="nav-four" aria-selected="false">Remarks</button>
+                                                <button class="nav-link" id="nav-five-tab" data-bs-toggle="tab" data-bs-target="#nav-five" type="button" role="tab" aria-controls="nav-five" aria-selected="false">CDE Points</button>
+                                                <button class="nav-link" id="nav-six-tab" data-bs-toggle="tab" data-bs-target="#nav-six" type="button" role="tab" aria-controls="nav-six" aria-selected="false">Sign/LTI</button>
+                                                <button class="nav-link" id="nav-seven-tab" data-bs-toggle="tab" data-bs-target="#nav-seven" type="button" role="tab" aria-controls="nav-seven" aria-selected="false">Change of Address</button>
                                             </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Date of Birth</label>
-                                                <p class="form-control-static"><?php echo isset($practitioner_data['practitioner_birth_date']) ? date('d F Y', strtotime($practitioner_data['practitioner_birth_date'])) : '15 June 1985'; ?></p>
+                                        </nav>
+                                        
+                                        <div class="tab-content profile-tab-content" id="profileTabsContent">
+                                            <div class="tab-pane fade show active" id="nav-one" role="tabpanel" aria-labelledby="nav-one-tab">
+                                                <h5 class="section-title">Personal Information</h5>
+                                                <?php
+                                                    $resDentists = mysqli_query($conn, "SELECT * FROM practitioner WHERE practitioner_id = '$id'");
+                                                    if (mysqli_num_rows($resDentists) > 0) {
+                                                        $rowDentists = mysqli_fetch_assoc($resDentists);
+                                                ?>
+                                                <div class="row">
+                                                    <div class="col-md-6"><div class="form-group"><label>Registration Number</label><p class="form-control-static"><?php echo $rowDentists['practitioner_username']; ?></p></div></div>
+                                                    <div class="col-md-6"><div class="form-group"><label>Registration Date</label><p class="form-control-static"><?php echo date_format(date_create($rowDentists['registration_date']),'d M Y'); ?></p></div></div>
+                                                    <div class="col-md-6"><div class="form-group"><label>Title</label><p class="form-control-static"><?php echo $rowDentists['practitioner_title']; ?></p></div></div>
+                                                    <div class="col-md-6"><div class="form-group"><label>Name</label><p class="form-control-static"><?php echo $rowDentists['practitioner_name']; ?></p></div></div>
+                                                    <div class="col-md-6"><div class="form-group"><label>Change of Name</label><p class="form-control-static"><?php echo $rowDentists['practitioner_change_of_name']; ?></p></div></div>
+                                                    <div class="col-md-6"><div class="form-group"><label>Gender</label><p class="form-control-static"><?php echo $rowDentists['practitioner_gender']; ?></p></div></div>
+                                                    <div class="col-md-6"><div class="form-group"><label>Father Name</label><p class="form-control-static"><?php echo $rowDentists['practitioner_spouse_name']; ?></p></div></div>
+                                                    <div class="col-md-6"><div class="form-group"><label>Birth Date</label><p class="form-control-static"><?php echo date_format(date_create($rowDentists['practitioner_birth_date']), 'd M Y'); ?></p></div></div>
+                                                    <div class="col-md-6"><div class="form-group"><label>Birth Place</label><p class="form-control-static"><?php echo $rowDentists['practitioner_birth_place']; ?></p></div></div>
+                                                    <div class="col-md-6"><div class="form-group"><label>Nationality</label><p class="form-control-static"><?php echo $rowDentists['practitioner_nationality']; ?></p></div></div>
+                                                    <div class="col-md-6"><div class="form-group"><label>Eligibility to vote</label><p class="form-control-static"><?php echo $rowDentists['vote_status']; ?></p></div></div>
+                                                    <div class="col-md-6"><div class="form-group"><label>Email Address</label><p class="form-control-static"><?php echo $rowDentists['practitioner_email_id']; ?></p></div></div>
+                                                    <div class="col-md-6"><div class="form-group"><label>Mobile Number</label><p class="form-control-static"><?php echo $rowDentists['practitioner_mobile_number']; ?></p></div></div>
+                                                </div>
+                                                <?php } ?>
                                             </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Gender</label>
-                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_gender'] ?? 'Male'; ?></p>
+
+                                            <div class="tab-pane fade" id="nav-two" role="tabpanel" aria-labelledby="nav-two-tab">
+                                                <h5 class="section-title">Contact Information</h5>
+                                                <?php
+                                                    $resAddress = mysqli_query($conn, "SELECT * FROM practitioner_address WHERE practitioner_address_type = 'Residential' AND practitioner_address_status = 'Active' AND practitioner_id = '$id'");
+                                                    if (mysqli_num_rows($resAddress) > 0) {
+                                                        $resAddress = mysqli_fetch_assoc($resAddress);
+                                                ?>
+                                                <div class="row">
+                                                    <div class="col-md-6"><div class="form-group"><label>Email Address</label><p class="form-control-static"><?php echo $rowDentists['practitioner_email_id']; ?></p></div></div>
+                                                    <div class="col-md-6"><div class="form-group"><label>Mobile Number</label><p class="form-control-static"><?php echo $rowDentists['practitioner_mobile_number']; ?></p></div></div>
+                                                    <div class="col-md-12"><div class="form-group"><label>Residential Address</label><p class="form-control-static"><?php echo $resAddress['practitioner_address_line1'] . ' ' . $resAddress['practitioner_address_line2']; ?></p></div></div>
+                                                    <div class="col-md-4"><div class="form-group"><label>City/District</label><p class="form-control-static"><?php echo $resAddress['practitioner_address_city']; ?></p></div></div>
+                                                    <div class="col-md-4"><div class="form-group"><label>State</label><p class="form-control-static"><?php echo $resAddress['state_name']; ?></p></div></div>
+                                                    <div class="col-md-4"><div class="form-group"><label>Postal Code</label><p class="form-control-static"><?php echo $resAddress['practitioner_address_pincode']; ?></p></div></div>
+                                                </div>
+                                                <?php } ?>
+
+                                                <div class="row mt-4">
+                                                    <div class="col-lg-5"><h5 class="section-title">Professional Information</h5></div>
+                                                    <div class="col-lg-7">
+                                                        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addProfessional">Add New <i class="fa fa-plus"></i></button>
+                                                    </div>
+                                                    <?php
+                                                        $resAddress2 = mysqli_query($conn, "SELECT * FROM practitioner_address WHERE practitioner_address_type = 'Professional' AND practitioner_address_status = 'Active' AND practitioner_id = '$id'");
+                                                        if (mysqli_num_rows($resAddress2) > 0) {
+                                                            $resAddress2 = mysqli_fetch_assoc($resAddress2);
+                                                    ?>
+                                                    <div class="col-lg-12 col-md-12 col-sm-12">
+                                                        <div class="form-group row"><label class="col-sm-5 col-form-label">Professional Address</label><div class="col-sm-7"><span class="form-control-plaintext"><?php echo $resAddress2['practitioner_address_line1'] . ' ' . $resAddress2['practitioner_address_line2']; ?></span></div></div>
+                                                        <div class="form-group row"><label class="col-sm-5 col-form-label">Professional City/District</label><div class="col-sm-7"><span class="form-control-plaintext"><?php echo $resAddress2['practitioner_address_city']; ?></span></div></div>
+                                                        <div class="form-group row"><label class="col-sm-5 col-form-label">Rural/Urban</label><div class="col-sm-7"><span class="form-control-plaintext"><?php echo $resAddress2['practitioner_address_category']; ?></span></div></div>
+                                                        <div class="form-group row"><label class="col-sm-5 col-form-label">Professional State</label><div class="col-sm-7"><span class="form-control-plaintext"><?php echo $resAddress2['state_name']; ?></span></div></div>
+                                                        <div class="form-group row"><label class="col-sm-5 col-form-label">Professional Postal Code</label><div class="col-sm-7"><span class="form-control-plaintext"><?php echo $resAddress2['practitioner_address_pincode']; ?></span></div></div>
+                                                        <div class="form-group row"><label class="col-sm-5 col-form-label">Professional Country</label><div class="col-sm-7"><span class="form-control-plaintext"><?php echo $resAddress2['country_name']; ?></span></div></div>
+                                                        <div class="form-group row"><label class="col-sm-5 col-form-label">Professional Phone</label><div class="col-sm-7"><span class="form-control-plaintext"><?php echo $resAddress2['practitioner_address_phoneno']; ?></span></div></div>
+                                                        <div class="form-group row"><div class="col-sm-12 text-end"><button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editProfessional">Edit <i class="fa fa-pen"></i></button></div></div>
+                                                    </div>
+                                                    <?php } ?>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Blood Group</label>
-                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_blood_group'] ?? 'O+'; ?></p>
+                                            
+                                            <div class="tab-pane fade" id="nav-three" role="tabpanel" aria-labelledby="nav-three-tab">
+                                                <h5 class="section-title">Educational Information</h5>
+                                                <?php
+                                                    $resEducation = mysqli_query($conn, "SELECT * FROM education_information WHERE practitioner_id = '$id' AND education_status = 'Active' ORDER BY education_id DESC");
+                                                    if (mysqli_num_rows($resEducation) > 0) {
+                                                        while ($rowEducation = mysqli_fetch_assoc($resEducation)) {
+                                                ?>
+                                                <div class="education-item mb-4">
+                                                    <div class="row">
+                                                        <div class="col-md-6"><h6><?php echo $rowEducation['education_name']; ?></h6><p class="text-muted"><?php $resCollege = mysqli_query($conn, "SELECT college_name FROM college_master WHERE college_status = 'Active' AND college_id = '$rowEducation[college_id]'"); if (mysqli_num_rows($resCollege) > 0) { $resCollege = mysqli_fetch_assoc($resCollege); echo $resCollege['college_name']; } ?></p></div>
+                                                        <div class="col-md-3"><p class="text-muted"><?php echo $rowEducation['education_month_of_passing'] . ' ' . $rowEducation['education_year_of_passing']; ?></p></div>
+                                                        <div class="col-md-3"><p class="text-success">Completed</p></div>
+                                                    </div>
+                                                </div>
+                                                <?php } } ?>
                                             </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Nationality</label>
-                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_nationality'] ?? 'Indian'; ?></p>
+                                            
+                                            <div class="tab-pane fade" id="nav-four" role="tabpanel" aria-labelledby="nav-four-tab">
+                                                <h5 class="section-title">Remarks</h5>
+                                                <?php
+                                                    $resRemarks = mysqli_query($conn, "SELECT practitioner_remarks FROM practitioner_remarks WHERE practitioner_id = '$id' AND practitioner_status = 'Active' ORDER BY practitioner_remarks_id DESC");
+                                                    if (mysqli_num_rows($resRemarks) > 0) {
+                                                        while ($rowRemarks = mysqli_fetch_assoc($resRemarks)) {
+                                                ?>
+                                                <div class="remarks-item mb-4"><p class="form-control-static"><?php echo $rowRemarks['practitioner_remarks']; ?></p></div>
+                                                <?php } } ?>
                                             </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Marital Status</label>
-                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_marital_status'] ?? 'Married'; ?></p>
+                                            
+                                            <div class="tab-pane fade" id="nav-five" role="tabpanel" aria-labelledby="nav-five-tab">
+                                                <h5 class="section-title">CDE Points</h5>
+                                                <div class="row">
+                                                    <div class="col-md-12"><div class="form-group"><label>Total Points Obtained</label><p class="form-control-static"><?php $resPoints = mysqli_query($conn, "SELECT COALESCE(SUM(cde_points),0) AS points FROM cde_points WHERE practitioner_id = '$id'"); if(mysqli_num_rows($resPoints)>0){ $resPoints = mysqli_fetch_assoc($resPoints); echo $resPoints['points']; } else { echo "0"; } ?></p></div></div>
+                                                    <div class="col-md-12"><div class="form-group"><label>Used Points</label><p class="form-control-static">0</p></div></div>
+                                                    <div class="col-md-12"><div class="form-group"><label>Total Available Points</label><p class="form-control-static">0</p></div></div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Contact Info Tab -->
-                                <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
-                                    <h5 class="section-title">Contact Information</h5>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Email Address</label>
-                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_email_id'] ?? 'practitioner@example.com'; ?></p>
+                                            
+                                            <div class="tab-pane fade" id="nav-six" role="tabpanel" aria-labelledby="nav-six-tab">
+                                                <h5 class="section-title">Sign/LTI</h5>
+                                                <div class="row">
+                                                    <div class="col-md-4"><div class="border p-3 text-center"><img style="height:200px;width:100%;object-fit:contain" src="<?php if (!empty($rowDentists['practitioner_signature'])) { echo 'admin/images/dentist/' . $rowDentists['practitioner_signature']; } else { echo 'admin/images/other/dentist.png'; } ?>" alt="Signature"><h6 class="mt-3">Signature</h6></div></div>
+                                                    <div class="col-md-4"><div class="border p-3 text-center"><img style="height:200px;width:100%;object-fit:contain" src="<?php if (!empty($rowDentists['practitioner_thumb'])) { echo 'admin/images/dentist/' . $rowDentists['practitioner_thumb']; } else { echo 'admin/images/other/dentist.png'; } ?>" alt="Thumb"><h6 class="mt-3">Thumb</h6></div></div>
+                                                    <div class="col-md-4"><div class="border p-3 text-center"><img src="<?= $qrcode ?>" alt="Barcode" style="height:200px;width:100%;object-fit:contain"><h6 class="mt-3">Barcode</h6></div></div>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Mobile Number</label>
-                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_mobile_number'] ?? '+91 9876543210'; ?></p>
+                                            
+                                            <div class="tab-pane fade" id="nav-seven" role="tabpanel" aria-labelledby="nav-seven-tab">
+                                                <h5 class="section-title">Change of Address</h5>
+                                                <form method="post" enctype="multipart/form-data">
+                                                    <div class="row">
+                                                        <div class="col-md-12"><div class="alert alert-info"><strong>Note:</strong> To update or correct your information such as name, phone number, or address, please submit the detailed description and a valid proof document, such as an Aadhar card.</div></div>
+                                                        <div class="col-md-8"><div class="form-group"><label>Description</label><textarea class="form-control" required name="description" rows="4"></textarea></div></div>
+                                                        <div class="col-md-8"><div class="form-group"><label>Proof Attachment</label><input type="file" class="form-control" required name="image" accept=".jpg, .jpeg, .png, .pdf"><small class="text-muted">Attach proof such as Aadhaar card or identity card [should not exceed 2 MB in size].</small></div></div>
+                                                        <div class="col-md-12"><button type="submit" name="address_request" class="btn btn-primary">Submit Request</button></div>
+                                                    </div>
+                                                </form>
                                             </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label>Alternative Number</label>
-                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_alternative_number'] ?? '+91 8765432109'; ?></p>
+
+                                            <?php if (mysqli_num_rows($resAddress2) > 0) { ?>
+                                            <div class="modal fade" id="editProfessional" tabindex="-1" aria-labelledby="editLabel" aria-hidden="true">
+                                                <div class="modal-dialog modal-lg">
+                                                    <form method="POST">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h1 class="modal-title fs-5" id="editLabel">Edit Professional Information</h1>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <div class="row">
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Address Line 1<span class="text-danger">*</span></label><input autocomplete="off" type="text" value="<?php echo $resAddress2['practitioner_address_line1']; ?>" name="address_line1" maxlength="1000" title="Please enter a valid address." required class="form-control"></div>
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Address Line 2<span class="text-danger">*</span></label><input autocomplete="off" type="text" value="<?php echo $resAddress2['practitioner_address_line2']; ?>" name="address_line2" maxlength="1000" title="Please enter a valid address." required class="form-control"></div>
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Professional Phone<span class="text-danger">*</span></label><input autocomplete="off" type="text" value="<?php echo $resAddress2['practitioner_address_phoneno']; ?>" required name="mobile_number" maxlength="10" pattern="[0-9]{10}" title="Accept 10 digit number" class="form-control"></div>
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Secondary Number</label><input autocomplete="off" type="text" value="<?php echo $resAddress2['practitioner_address_secondary_phoneno']; ?>" name="secondary_number" maxlength="12" pattern="[0-9]{6,12}" title="Accept 6 to 12 digit number" class="form-control"></div>
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Professional Postal Code<span class="text-danger">*</span></label><input autocomplete="off" type="text" required value="<?php echo $resAddress2['practitioner_address_pincode']; ?>" name="postal_code" maxlength="6" pattern="[0-9]{6}" title="Accept 6 digit number" class="form-control"></div>
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Professional District<span class="text-danger">*</span></label><input autocomplete="off" type="text" value="<?php echo $resAddress2['practitioner_address_city']; ?>" name="residential_city" maxlength="1000" required title="Please enter a valid district." class="form-control"></div>
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Professional State<span class="text-danger">*</span></label><input name="residential_state" required autocomplete="off" value="<?php echo $resAddress2['state_name']; ?>" title="Please enter a valid state." id="stateInputProfessional" class="form-control"></div>
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Professional Country<span class="text-danger">*</span></label><input required autocomplete="off" value="<?php echo $resAddress2['country_name']; ?>" name="residential_country" id="countryInputProfessional" title="Please enter a valid country." class="form-control"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                                <button type="submit" name="update_professional" class="btn btn-primary">Update</button>
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="col-md-12">
-                                            <div class="form-group">
-                                                <label>Current Address</label>
-                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_address'] ?? '123 Main Street, Apartment 4B, Bangalore, Karnataka - 560001'; ?></p>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-12">
-                                            <div class="form-group">
-                                                <label>Permanent Address</label>
-                                                <p class="form-control-static"><?php echo $practitioner_data['practitioner_permanent_address'] ?? '456 Park Avenue, House No. 7, Mysore, Karnataka - 570001'; ?></p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Education Tab -->
-                                <div class="tab-pane fade" id="education" role="tabpanel" aria-labelledby="education-tab">
-                                    <h5 class="section-title">Educational Qualifications</h5>
-                                    
-                                    <div class="education-item">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <h6>Bachelor of Homeopathic Medicine and Surgery (BHMS)</h6>
-                                                <p>Government Homeopathic Medical College</p>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <p class="text-muted">2005 - 2010</p>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <p class="text-success">First Class</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="education-item">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <h6>MD in Homeopathy</h6>
-                                                <p>National Institute of Homeopathy</p>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <p class="text-muted">2010 - 2013</p>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <p class="text-success">Distinction</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="education-item">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <h6>Certificate in Advanced Clinical Homeopathy</h6>
-                                                <p>International Academy of Classical Homeopathy</p>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <p class="text-muted">2015</p>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <p class="text-success">Completed</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Professional Tab -->
-                                <div class="tab-pane fade" id="professional" role="tabpanel" aria-labelledby="professional-tab">
-                                    <h5 class="section-title">Professional Experience</h5>
-                                    
-                                    <div class="professional-item">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <h6>Senior Homeopathic Physician</h6>
-                                                <p>City Homeopathic Hospital</p>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <p class="text-muted">2018 - Present</p>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <p class="text-success">Full-time</p>
-                                            </div>
-                                        </div>
-                                        <p>Providing comprehensive homeopathic treatment for various chronic and acute conditions.</p>
-                                    </div>
-                                    
-                                    <div class="professional-item">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <h6>Homeopathic Consultant</h6>
-                                                <p>Wellness Homeopathy Clinic</p>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <p class="text-muted">2013 - 2018</p>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <p class="text-success">Full-time</p>
-                                            </div>
-                                        </div>
-                                        <p>Managed patient care and treatment for a wide range of health conditions using homeopathic principles.</p>
-                                    </div>
-                                </div>
-                                
-                                <!-- Documents Tab -->
-                                <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
-                                    <h5 class="section-title">Uploaded Documents</h5>
-                                    
-                                    <div class="document-item">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-1">
-                                                <i class="fas fa-file-pdf text-danger fa-2x"></i>
-                                            </div>
-                                            <div class="col-md-8">
-                                                <h6>BHMS Degree Certificate</h6>
-                                                <p class="text-muted small mb-0">Uploaded on: 15 Jan 2022</p>
-                                            </div>
-                                            <div class="col-md-3 text-right">
-                                                <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i> View</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="document-item">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-1">
-                                                <i class="fas fa-file-pdf text-danger fa-2x"></i>
-                                            </div>
-                                            <div class="col-md-8">
-                                                <h6>MD Certificate</h6>
-                                                <p class="text-muted small mb-0">Uploaded on: 15 Jan 2022</p>
-                                            </div>
-                                            <div class="col-md-3 text-right">
-                                                <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i> View</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="document-item">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-1">
-                                                <i class="fas fa-file-image text-primary fa-2x"></i>
-                                            </div>
-                                            <div class="col-md-8">
-                                                <h6>Registration Certificate</h6>
-                                                <p class="text-muted small mb-0">Uploaded on: 16 Jan 2022</p>
-                                            </div>
-                                            <div class="col-md-3 text-right">
-                                                <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i> View</a>
+                                            <?php } ?>
+                                            
+                                            <div class="modal fade" id="addProfessional" tabindex="-1" aria-labelledby="addLabel" aria-hidden="true">
+                                                <div class="modal-dialog modal-lg">
+                                                    <form method="POST">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h1 class="modal-title fs-5" id="addLabel">Add Professional Information</h1>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <div class="row">
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Address Line 1<span class="text-danger">*</span></label><input autocomplete="off" type="text" name="address_line1" maxlength="1000" title="Please enter a valid address." required class="form-control"></div>
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Address Line 2<span class="text-danger">*</span></label><input autocomplete="off" type="text" name="address_line2" maxlength="1000" title="Please enter a valid address." required class="form-control"></div>
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Professional Phone<span class="text-danger">*</span></label><input autocomplete="off" type="text" required name="mobile_number" maxlength="10" pattern="[0-9]{10}" title="Accept 10 digit number" class="form-control"></div>
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Secondary Number</label><input autocomplete="off" type="text" name="secondary_number" maxlength="12" pattern="[0-9]{6,12}" title="Accept 6 to 12 digit number" class="form-control"></div>
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Professional Postal Code<span class="text-danger">*</span></label><input autocomplete="off" type="text" required name="postal_code" maxlength="6" pattern="[0-9]{6}" title="Accept 6 digit number" class="form-control"></div>
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Professional District<span class="text-danger">*</span></label><input autocomplete="off" type="text" name="residential_city" maxlength="1000" required title="Please enter a valid district." class="form-control"></div>
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Professional State<span class="text-danger">*</span></label><input name="residential_state" required autocomplete="off" title="Please enter a valid state." id="stateInputProfessional" class="form-control"></div>
+                                                                    <div class="col-xl-6 mb-3"><label class="form-label">Professional Country<span class="text-danger">*</span></label><input required autocomplete="off" name="residential_country" id="countryInputProfessional" title="Please enter a valid country." class="form-control"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                                <button type="submit" name="add_professional" class="btn btn-primary">Add</button>
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -685,45 +425,72 @@ if (!$president_data) {
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
     </div>
 
-    <!-- Include Footer -->
-    <?php include 'includes/footer.php'; ?>
-
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <script>
-        // Preloader
-        window.addEventListener('load', function() {
-            const preloader = document.querySelector('.preloader-container');
-            setTimeout(() => {
-                preloader.style.opacity = '0';
-                preloader.style.visibility = 'hidden';
-            }, 10);
+    document.addEventListener('DOMContentLoaded', function() {
+        // Verify Bootstrap is loaded
+        if (typeof bootstrap === 'undefined') {
+            console.error('Bootstrap JS is not loaded. Check the script source.');
+            return;
+        }
+
+        // Initialize tabs
+        const tabList = document.querySelectorAll('.nav-tabs .nav-link');
+        tabList.forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                const bsTab = new bootstrap.Tab(this);
+                bsTab.show();
+            });
         });
 
-        // Initialize Bootstrap tooltips and tabs
-        $(function () {
-            $('[data-toggle="tooltip"]').tooltip();
-            
-            // Ensure tabs work correctly
-            $('#profileTabs a').on('click', function (e) {
-                e.preventDefault();
-                $(this).tab('show');
-            });
-            
-            // Handle URL with hash for direct tab access
-            if (window.location.hash) {
-                const hash = window.location.hash;
-                $('#profileTabs a[href="' + hash + '"]').tab('show');
+        // Handle direct URL access
+        if (window.location.hash) {
+            const hash = window.location.hash;
+            const targetButton = document.querySelector(`.nav-link[data-bs-target="${hash}"]`);
+            if (targetButton) {
+                const bsTab = new bootstrap.Tab(targetButton);
+                bsTab.show();
             }
-            
-            // Change URL hash when tab changes
-            $('#profileTabs a').on('shown.bs.tab', function (e) {
-                window.location.hash = e.target.hash;
+        }
+
+        // Update URL hash on tab switch
+        document.querySelectorAll('.nav-link[data-bs-toggle="tab"]').forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function(event) {
+                window.location.hash = event.target.getAttribute('data-bs-target');
             });
         });
+
+        // Initialize modals with error handling
+        const editModalElement = document.getElementById('editProfessional');
+        const addModalElement = document.getElementById('addProfessional');
+        const editProfessionalModal = editModalElement ? new bootstrap.Modal(editModalElement) : null;
+        const addProfessionalModal = addModalElement ? new bootstrap.Modal(addModalElement) : null;
+
+        const editButton = document.querySelector('[data-bs-target="#editProfessional"]');
+        const addButton = document.querySelector('[data-bs-target="#addProfessional"]');
+
+        if (editButton && editProfessionalModal) {
+            editButton.addEventListener('click', function() {
+                editProfessionalModal.show();
+            });
+        } else {
+            console.warn('Edit professional button or modal not found.');
+        }
+
+        if (addButton && addProfessionalModal) {
+            addButton.addEventListener('click', function() {
+                addProfessionalModal.show();
+            });
+        } else {
+            console.warn('Add professional button or modal not found.');
+        }
+    });
     </script>
 </body>
 </html>
+<?php } ?>

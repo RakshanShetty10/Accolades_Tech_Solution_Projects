@@ -74,7 +74,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                                  education_year_of_passing, education_month_of_passing,
                                                  college_id, university_id, education_status, 
                                                  education_created_on, education_created_by) 
-                                     VALUES (?, ?, ?, ?, ?, ?, 'active', NOW(), 'User Registration')";
+                                     VALUES (?, ?, ?, ?, ?, ?, 'Active', NOW(), 'User Registration')";
                     
                     $stmt_education = $conn->prepare($sql_education);
                     $stmt_education->bind_param("isssii", $practitioner_id, $education_name, 
@@ -91,7 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $sql_address = "INSERT INTO practitioner_address (practitioner_id, practitioner_address_type, 
                                                               practitioner_address_line1, practitioner_address_line2, 
                                                               practitioner_address_phoneno, practitioner_address_status) 
-                                  VALUES (?, 'Permanent', ?, ?, ?, 'active')";
+                                  VALUES (?, 'Residential', ?, ?, ?, 'Active')";
                     
                     $stmt_address = $conn->prepare($sql_address);
                     $stmt_address->bind_param("isss", $practitioner_id, $practitioner_address_line1, 
