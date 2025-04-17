@@ -13,7 +13,7 @@ $current_year = date("Y");
 <html lang="en">
 
 <head>
-    <title><?php echo $site_full;?> - Dentist Profile</title>
+    <title><?php echo $site_full;?> - Practitioner Profile</title>
     <?php require_once 'include/header-link.php';?>
     <link href="assets/css/module-css/sidebar.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

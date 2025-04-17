@@ -84,20 +84,22 @@ date_default_timezone_set('Asia/Kolkata');
                                         <h4 class="welcome-header">Welcome <?php echo $practitioneer_name;?></h4>
                                         <div class="welcome-content">
                                             <div class="welcome-image">
-                                                <img src="<?php if (!empty($resWelcome['practitioner_profile_image'])) {
+                                            <img src="assets/chairman/chairman.jpeg" alt="chaiman_img" width="100px" height="100px">
+
+                                                <!-- <img src="<?php if (!empty($resWelcome['practitioner_profile_image'])) {
                                                     echo 'admin/images/dentist/' . $resWelcome['practitioner_profile_image'];
                                                 } else {
                                                     echo 'admin/images/other/dentist.png';
-                                                } ?>" alt="<?php echo $practitioneer_name;?>">
+                                                } ?>" alt="<?php echo $practitioneer_name;?>"> -->
                                             </div>
                                             <div class="welcome-text">
-                                                <p>My dear Fellow Practitioner,</p>
+                                                <p class="greetings">My dear Fellow Practitioner,</p>
                                                 <p>&nbsp;&nbsp;&nbsp;&nbsp;Greetings from me and my team.
                                                 The establishment of the State Council for Allied and Health Care Professionals marks a significant advancement for the healthcare industry. As Chairman, I commend the hard work of allied and health care professionals who advocated for this council. Its goals include regulating and standardizing the profession, ensuring quality education, promoting professional development, and advocating for professionals' rights. The council will enhance public awareness, facilitate networking, and uphold accountability and ethics. Additionally, it aims to provide opportunities for professional growth and influence healthcare policy. As the first appointed Chairman, I embrace the responsibility of creating guidelines that will elevate the allied and health care profession..</p>
                                                 
                                                 <div class="signature-block">
                                                     <h6 class="signature-name"><?php echo $president_name?></h6>
-                                                    <span class="signature-title">PRESIDENT, <?php echo $president_qualification?></span>
+                                                    <span class="signature-title">Chairman KSAHC, <?php echo $president_qualification?></span>
                                                 </div>
                                             </div>
                                         </div>

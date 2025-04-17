@@ -75,6 +75,11 @@
   animation: movePattern 60s linear infinite;
 }
 
+img{
+  height: auto;
+  width: 200px;
+}
+
 /* Media queries for responsive design */
 @media (max-width: 768px) {
   .profile-banner {

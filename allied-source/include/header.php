@@ -21,7 +21,7 @@
             <div class="collapse navbar-collapse" id="navbarContent">
                 <?php if(!empty($_SESSION['_id'])) { ?>
                 <!-- Main Navigation -->
-                <ul class="navbar-nav mx-auto">
+                <!-- <ul class="navbar-nav mx-auto">
                     <li class="nav-item">
                         <a class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'welcome.php') ? 'active' : ''; ?>" 
                            href="welcome.php">
@@ -46,7 +46,7 @@
                            <i class="fas fa-money-bill-wave"></i> Payments
                         </a>
                     </li>
-                </ul>
+                </ul> -->
                 
                 <!-- User Profile & Options -->
                 <div class="navbar-nav ms-auto">
@@ -152,7 +152,8 @@
 }
 
 .logo-img {
-    height: 75px;
+    height: 75px !important;
+    width: inherit;
     margin-right: 10px;
 }
 

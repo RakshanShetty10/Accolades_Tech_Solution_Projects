@@ -26,11 +26,36 @@ date_default_timezone_set('Asia/Kolkata');
     <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
     <link href="vendor/fullcalendar/css/main.min.css" rel="stylesheet">
     <link href="vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
-    <link href="assets/css/module-css/sidebar.css" rel="stylesheet">
+    <!-- <link href="css/style.css" rel="stylesheet"> -->
+    <!-- <link href="assets/css/module-css/sidebar.css" rel="stylesheet"> -->
     <?php require_once 'include/header-link.php'; ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+        body {
+            padding: 20px 0;
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .container-main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        
+        .page-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #192a56;
+        }
+        
+        .page-title h2 {
+            font-weight: 600;
+        }
+        
         .fc-daygrid-day.highlight-day {
             background-color: red !important;
         }
@@ -45,81 +70,406 @@ date_default_timezone_set('Asia/Kolkata');
             color: white !important;
         }
 
+        /* Modal styling */
         .modal {
             display: none;
             position: fixed;
             z-index: 1000;
-            padding-top: 100px;
+            padding-top: 50px;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
         }
 
         .modal-content {
             background-color: #fefefe;
-            margin: auto;
-            padding: 20px;
+            margin: 0 auto;
+            padding: 25px;
             border: 1px solid #888;
-            width: 50%;
+            width: 100%;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
         }
 
+        /* Improve close button styling */
         .close {
-            color: #aaa;
-            float: right;
+            color: #999;
             font-size: 28px;
             font-weight: bold;
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            transition: all 0.2s ease;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f5f5;
+            border-radius: 50%;
+            z-index: 10;
         }
 
         .close:hover,
         .close:focus {
-            color: black;
+            color: #000;
+            background-color: #eee;
             text-decoration: none;
             cursor: pointer;
+            transform: scale(1.1);
+        }
+        
+        /* Button group styling */
+        .form-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .btn-cancel {
+            background-color: #f5f5f5;
+            color: #333;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+        
+        .btn-cancel:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .form-buttons .btn-primary {
+            flex: 2;
         }
 
+        /* Hide nice-select completely - this is the element causing issues */
+        .nice-select {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            width: 0 !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            pointer-events: none !important;
+        }
 
+        /* Reset any bootstrap-select styling that might interfere */
+        .bootstrap-select {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        /* Fixed dropdown styling */
         #slotDropdown {
-            display: block !important;
-            visibility: visible !important;
-            position: static !important;
-            opacity: 1 !important;
-            width: auto !important;
+            width: 100% !important;
             height: auto !important;
-            z-index: 1000;
-            background-color: white;
-            border: 1px solid #ccc;
-            padding: 5px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            background-color: #fff;
+            appearance: menulist !important;
+            -webkit-appearance: menulist !important;
+            -moz-appearance: menulist !important;
+            position: static !important;
+            display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            color: #000;
+            z-index: 1 !important;
+            transform: none !important;
         }
 
         #slotDropdown option {
             display: block !important;
             visibility: visible !important;
             color: #000;
-            background-color: white;
+            background-color: #fff;
+            padding: 5px;
         }
 
         select[name="category"] {
-            display: block !important;
-            visibility: visible !important;
-            position: static !important;
-            opacity: 1 !important;
             width: 100% !important;
             height: auto !important;
-            z-index: 1000;
-            background-color: white;
-            border: 1px solid #ccc;
-            padding: 5px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
             font-size: 16px;
-            color: #000;
+            background-color: #fff;
+            appearance: menulist !important;
+            -webkit-appearance: menulist !important;
+            -moz-appearance: menulist !important;
+            position: static !important;
+            display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            z-index: 10 !important;
         }
 
         select[name="category"] option {
             display: block !important;
             visibility: visible !important;
             color: #000;
-            background-color: white;
+            background-color: #fff;
+            padding: 5px;
+        }
+
+        /* Ensure correct dropdown direction */
+        .dropdown-menu {
+            top: 100% !important;
+            bottom: auto !important;
+            left: 0 !important;
+            right: auto !important;
+            transform: none !important;
+            position: absolute !important;
+            margin-top: 2px !important;
+            display: block !important;
+        }
+
+        /* Fix for the extra space after dropdowns */
+        .form-control {
+            margin-bottom: 0 !important;
+            box-sizing: border-box;
+            line-height: normal;
+        }
+        
+        /* Improve label styling */
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        /* Fix for textarea spacing */
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        /* Improve button styling */
+        .btn-primary {
+            background-color: #192a56;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: #273c75;
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary:focus {
+            outline: none;
+            box-shadow: none;
+        }
+
+        /* Calendar Responsive Fixes */
+        .app-fullcalendar {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .fc .fc-toolbar {
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .fc .fc-toolbar-title {
+            font-size: 1.25em;
+            margin: 0;
+        }
+
+        .fc-header-toolbar.fc-toolbar {
+            margin-bottom: 1em !important;
+        }
+
+        .fc-view-harness {
+            min-width: 300px;
+        }
+
+        .fc-scrollgrid {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .fc-col-header, .fc-daygrid-body {
+            width: 100% !important;
+        }
+
+        .fc .fc-daygrid-day-top {
+            justify-content: center;
+        }
+
+        /* Media Queries for Responsive Design */
+        @media (max-width: 1199px) {
+            .modal-content {
+                max-width: 600px;
+                width: 90%;
+            }
+            
+            .fc .fc-toolbar {
+                padding: 0 10px;
+            }
+        }
+        
+        @media (max-width: 991px) {
+            .modal-content {
+                max-width: 550px;
+                width: 90%;
+            }
+            
+            .modal {
+                padding-top: 60px;
+            }
+            
+            .fc-toolbar-chunk {
+                margin-bottom: 10px;
+            }
+            
+            .fc .fc-toolbar-title {
+                font-size: 1.1em;
+            }
+        }
+        
+        @media (max-width: 767px) {
+            .modal-content {
+                max-width: 500px;
+                width: 90%;
+                padding: 15px;
+            }
+            
+            .row.mb-3 {
+                margin-bottom: 0 !important;
+            }
+            
+            .col-xl-6 {
+                margin-bottom: 15px;
+            }
+            
+            .form-control, 
+            select[name="category"],
+            #slotDropdown {
+                font-size: 14px;
+                padding: 8px;
+            }
+            
+            .fc .fc-toolbar {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .fc-toolbar-chunk {
+                margin-bottom: 10px;
+                width: 100%;
+                display: flex;
+                justify-content: center;
+            }
+            
+            .fc-header-toolbar.fc-toolbar .fc-toolbar-chunk:first-child {
+                order: 2;
+            }
+            
+            .fc-header-toolbar.fc-toolbar .fc-toolbar-chunk:nth-child(2) {
+                order: 1;
+            }
+            
+            .fc-header-toolbar.fc-toolbar .fc-toolbar-chunk:last-child {
+                order: 3;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .modal {
+                padding-top: 30px;
+            }
+            
+            .modal-content {
+                max-width: 95%;
+                width: 95%;
+                padding: 15px 10px;
+            }
+            
+            h3.col-5 {
+                font-size: 18px;
+                width: 100%;
+                flex: 0 0 100%;
+                max-width: 100%;
+                margin-bottom: 5px;
+            }
+            
+            h5.col-7 {
+                font-size: 14px;
+                width: 100%;
+                flex: 0 0 100%;
+                max-width: 100%;
+                text-align: left !important;
+            }
+            
+            .fc .fc-toolbar-title {
+                font-size: 1em;
+            }
+            
+            .fc .fc-button {
+                padding: 0.2em 0.5em;
+                font-size: 0.9em;
+            }
+            
+            .fc-col-header-cell {
+                font-size: 0.8em;
+            }
+            
+            .fc-daygrid-day-number {
+                font-size: 0.9em;
+            }
+        }
+
+        /* Fix 2: Force dropdowns to display properly */
+        .dropdown-menu {
+            top: 100% !important;
+            bottom: auto !important;
+            left: 0 !important;
+            right: auto !important;
+            transform: none !important;
+            position: absolute !important;
+            margin-top: 2px !important;
+            display: block !important;
+        }
+        
+        /* Ensure selects show dropdown arrows properly */
+        select.form-control {
+            appearance: menulist !important;
+            -webkit-appearance: menulist !important;
+            -moz-appearance: menulist !important;
+            background-image: none !important;
+        }
+        
+        /* Override any Bootstrap's dropdown-menu-up class */
+        .dropdown-menu-up {
+            top: 100% !important;
+            bottom: auto !important;
+        }
+        
+        /* Ensure proper dropdown dimensions */
+        .bootstrap-select .dropdown-menu {
+            min-width: 100% !important;
+            box-sizing: border-box !important;
+            max-height: 300px !important;
         }
     </style>
 </head>
@@ -266,7 +616,10 @@ date_default_timezone_set('Asia/Kolkata');
                                                         </div>
                                                         <input type="hidden" id="selectedDate" name="date" />
                                                         <div class="col-xl-12">
+                                                            <div class="form-buttons">
                                                             <button type="submit" name="submit" class="btn btn-primary">Submit</button>
+                                                                <button type="button" class="btn btn-cancel">Cancel</button>
+                                                            </div>
                                                         </div>
                                                     </form>
                                                 </div>
@@ -291,13 +644,24 @@ date_default_timezone_set('Asia/Kolkata');
 
     <script>
         function closeModal() {
-            document.getElementById('eventModal').classList.remove('active');
+            document.getElementById('calendarModal').style.display = 'none';
+            document.getElementById('modalOverlay').style.display = 'none';
         }
 
+        document.addEventListener('DOMContentLoaded', function() {
+            // Close button event listener
+            document.querySelector('.close').addEventListener('click', closeModal);
+            
+            // Cancel button event listener
+            document.querySelector('.btn-cancel').addEventListener('click', closeModal);
+            
+            // Modal overlay click to close
         document.getElementById('modalOverlay').addEventListener('click', closeModal);
+        });
 
         function openModal() {
-            document.getElementById('eventModal').classList.add('active');
+            document.getElementById('calendarModal').style.display = 'block';
+            document.getElementById('modalOverlay').style.display = 'block';
         }
     </script>
 

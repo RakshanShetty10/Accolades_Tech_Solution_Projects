@@ -234,11 +234,11 @@ date_default_timezone_set('Asia/Kolkata');
                                             <div class="tab-pane fade show active" id="nav-one" role="tabpanel"
                                                 aria-labelledby="nav-one-tab" tabindex="0">
                                                 <?php
-                                                    $resDentists = mysqli_query($conn, "SELECT * FROM practitioner WHERE practitioner_id = '$id'");
+                                                    $resPractitioner = mysqli_query($conn, "SELECT * FROM practitioner WHERE practitioner_id = '$id'");
 
-                                                    if (mysqli_num_rows($resDentists) > 0) {
+                                                    if (mysqli_num_rows($resPractitioner) > 0) {
 
-                                                        $rowDentists = mysqli_fetch_assoc($resDentists);
+                                                        $rowPractitioner = mysqli_fetch_assoc($resPractitioner);
                                                         ?>
                                                 <div class="row mt_40 info-section">
                                                     <h5 class="mb_20">Personal Information</h5>
@@ -248,7 +248,7 @@ date_default_timezone_set('Asia/Kolkata');
                                                                 number</label>
                                                             <div class="col-sm-7">
                                                                 <span
-                                                                    class="form-control-plaintext"><?php echo $rowDentists['practitioner_username']; ?></span>
+                                                                    class="form-control-plaintext"><?php echo $rowPractitioner['practitioner_username']; ?></span>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row">
@@ -256,21 +256,21 @@ date_default_timezone_set('Asia/Kolkata');
                                                                 Date</label>
                                                             <div class="col-sm-7">
                                                                 <span
-                                                                    class="form-control-plaintext"><?php echo date_format(date_create($rowDentists['registration_date']),'d M Y'); ?></span>
+                                                                    class="form-control-plaintext"><?php echo date_format(date_create($rowPractitioner['registration_date']),'d M Y'); ?></span>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row">
                                                             <label class="col-sm-5 col-form-label">Title</label>
                                                             <div class="col-sm-7">
                                                                 <span
-                                                                    class="form-control-plaintext"><?php echo $rowDentists['practitioner_title']; ?></span>
+                                                                    class="form-control-plaintext"><?php echo $rowPractitioner['practitioner_title']; ?></span>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row">
                                                             <label class="col-sm-5 col-form-label">Name</label>
                                                             <div class="col-sm-7">
                                                                 <span
-                                                                    class="form-control-plaintext"><?php echo $rowDentists['practitioner_name']; ?></span>
+                                                                    class="form-control-plaintext"><?php echo $rowPractitioner['practitioner_name']; ?></span>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row">
@@ -278,14 +278,14 @@ date_default_timezone_set('Asia/Kolkata');
                                                                 Name</label>
                                                             <div class="col-sm-7">
                                                                 <span
-                                                                    class="form-control-plaintext"><?php echo $rowDentists['practitioner_change_of_name']; ?></span>
+                                                                    class="form-control-plaintext"><?php echo $rowPractitioner['practitioner_change_of_name']; ?></span>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row">
                                                             <label class="col-sm-5 col-form-label">Gender</label>
                                                             <div class="col-sm-7">
                                                                 <span
-                                                                    class="form-control-plaintext"><?php echo $rowDentists['practitioner_gender']; ?></span>
+                                                                    class="form-control-plaintext"><?php echo $rowPractitioner['practitioner_gender']; ?></span>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row">
@@ -293,28 +293,28 @@ date_default_timezone_set('Asia/Kolkata');
                                                                 Name</label>
                                                             <div class="col-sm-7">
                                                                 <span
-                                                                    class="form-control-plaintext"><?php echo $rowDentists['practitioner_spouse_name']; ?></span>
+                                                                    class="form-control-plaintext"><?php echo $rowPractitioner['practitioner_spouse_name']; ?></span>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row">
                                                             <label class="col-sm-5 col-form-label">Birth Date</label>
                                                             <div class="col-sm-7">
                                                                 <span
-                                                                    class="form-control-plaintext"><?php echo date_format(date_create($rowDentists['practitioner_birth_date']), 'd M Y'); ?></span>
+                                                                    class="form-control-plaintext"><?php echo date_format(date_create($rowPractitioner['practitioner_birth_date']), 'd M Y'); ?></span>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row">
                                                             <label class="col-sm-5 col-form-label">Birth Place</label>
                                                             <div class="col-sm-7">
                                                                 <span
-                                                                    class="form-control-plaintext"><?php echo $rowDentists['practitioner_birth_place']; ?></span>
+                                                                    class="form-control-plaintext"><?php echo $rowPractitioner['practitioner_birth_place']; ?></span>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row">
                                                             <label class="col-sm-5 col-form-label">Nationality</label>
                                                             <div class="col-sm-7">
                                                                 <span
-                                                                    class="form-control-plaintext"><?php echo $rowDentists['practitioner_nationality']; ?></span>
+                                                                    class="form-control-plaintext"><?php echo $rowPractitioner['practitioner_nationality']; ?></span>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row">
@@ -322,21 +322,21 @@ date_default_timezone_set('Asia/Kolkata');
                                                                 vote</label>
                                                             <div class="col-sm-7">
                                                                 <span
-                                                                    class="form-control-plaintext"><?php echo $rowDentists['vote_status']; ?></span>
+                                                                    class="form-control-plaintext"><?php echo $rowPractitioner['vote_status']; ?></span>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row">
                                                             <label class="col-sm-5 col-form-label">Email Address</label>
                                                             <div class="col-sm-7">
                                                                 <span
-                                                                    class="form-control-plaintext"><?php echo $rowDentists['practitioner_email_id']; ?></span>
+                                                                    class="form-control-plaintext"><?php echo $rowPractitioner['practitioner_email_id']; ?></span>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row">
                                                             <label class="col-sm-5 col-form-label">Mobile Number</label>
                                                             <div class="col-sm-7">
                                                                 <span
-                                                                    class="form-control-plaintext"><?php echo $rowDentists['practitioner_mobile_number']; ?></span>
+                                                                    class="form-control-plaintext"><?php echo $rowPractitioner['practitioner_mobile_number']; ?></span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -748,15 +748,15 @@ date_default_timezone_set('Asia/Kolkata');
                                                         <div class="form-group row">
                                                             <div class="col-sm-3 border">
                                                                 <img style="height:200px;padding:15px;width:100%"
-                                                                    src="<?php if (!empty($rowDentists['practitioner_signature'])) {
-                                                                                echo 'admin/images/dentist/' . $rowDentists['practitioner_signature'];
+                                                                    src="<?php if (!empty($rowPractitioner['practitioner_signature'])) {
+                                                                                echo 'admin/images/dentist/' . $rowPractitioner['practitioner_signature'];
                                                                             }else{echo 'admin/images/other/dentist.png';} ?>" alt="Signature">
                                                                 <h6 class="text-center mb_15">Signature</h6>
                                                             </div>
                                                             <div class="col-sm-3 border">
                                                                 <img style="height:200px;padding:15px;width:100%"
-                                                                    src="<?php if (!empty($rowDentists['practitioner_thumb'])) {
-                                                                                echo 'admin/images/dentist/' . $rowDentists['practitioner_thumb'];
+                                                                    src="<?php if (!empty($rowPractitioner['practitioner_thumb'])) {
+                                                                                echo 'admin/images/dentist/' . $rowPractitioner['practitioner_thumb'];
                                                                             }else{echo 'admin/images/other/dentist.png';} ?>" alt="Thumb">
 
                                                                 <h6 class="text-center mb_15">Thumb</h6>

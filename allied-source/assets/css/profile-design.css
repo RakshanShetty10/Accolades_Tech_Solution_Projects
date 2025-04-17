@@ -88,6 +88,7 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    padding: 10px 0;
   }
   
   .welcome-header {
@@ -96,6 +97,7 @@
     margin-bottom: 25px;
     color: var(--primary-color);
     font-weight: 600;
+    font-size: 28px;
   }
   
   .welcome-header:after {
@@ -105,7 +107,7 @@
     left: 0;
     width: 80px;
     height: 3px;
-    background-color: var(--accent-color);
+    background-color: var(--secondary-color);
   }
   
   .welcome-content {
@@ -116,14 +118,19 @@
   }
   
   .welcome-image {
+    flex: 0 0 200px;
     overflow: hidden;
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
     transition: var(--transition);
+    margin-right: 20px;
+    margin-top: 120px;
+    position: relative;
   }
   
   .welcome-image:hover {
     transform: scale(1.02);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
   }
   
   .welcome-image img {
@@ -131,34 +138,104 @@
     height: auto;
     object-fit: cover;
     display: block;
+    max-width: 200px;
+    border: 4px solid white;
+  }
+  
+  .welcome-image::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    right: -10px;
+    width: 70%;
+    height: 70%;
+    border-right: 3px solid var(--accent-color);
+    border-bottom: 3px solid var(--accent-color);
+    z-index: -1;
   }
   
   .welcome-text {
     flex: 1;
     font-size: 16px;
     line-height: 1.8;
-    color: #555;
+    color: #444;
+    background-color: #fafafa;
+    padding: 25px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    position: relative;
   }
+  
+  .welcome-text::before {
+    content: '"';
+    position: absolute;
+    top: 10px;
+    left: 15px;
+    font-size: 80px;
+    color: rgba(25, 42, 86, 0.08);
+    font-family: Georgia, serif;
+    line-height: 1;
+  }
+  
+  .welcome-text .greetings {
+    font-weight: 600;
+    color: var(--secondary-color);
+    font-size: 20px;
+    margin-bottom: 15px;
+    position: relative;
+    padding-left: 15px;
+  }
+  
+  /* .welcome-text .greetings::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 5px;
+    height: 20px;
+    background-color: var(--secondary-color);
+    border-radius: 2px;
+  } */
   
   .welcome-text p {
     margin-bottom: 15px;
+    text-align: justify;
   }
   
   .signature-block {
     margin-top: 30px;
     border-top: 1px solid #eee;
     padding-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    position: relative;
+  }
+  
+  .signature-block::before {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: -1px;
+    width: 50px;
+    height: 3px;
+    background-color: var(--primary-color);
   }
   
   .signature-name {
+    /* font-family: 'Brush Script MT', cursive; */
     font-weight: 600;
     color: var(--primary-color);
     margin: 0;
+    font-size: 29px;
+    line-height: 1.2;
   }
   
   .signature-title {
     color: #777;
-    font-style: italic;
+    /* font-style: italic; */
+    font-size: 17px;
   }
   
   /* Tabs Styling */
@@ -344,6 +421,27 @@
   }
   
   /* Responsive adjustments */
+  @media (max-width: 991px) {
+    .welcome-content {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .welcome-image {
+      margin-right: 0;
+      margin-bottom: 30px;
+      max-width: 220px;
+    }
+    
+    .welcome-text {
+      padding: 20px;
+    }
+    
+    .signature-block {
+      align-items: center;
+    }
+  }
+  
   @media (max-width: 768px) {
     .nav-tabs .nav-link {
       padding: 8px 12px;
@@ -358,13 +456,49 @@
       justify-content: center;
     }
     
+    .welcome-header {
+      font-size: 24px;
+      text-align: center;
+    }
+    
+    .welcome-header:after {
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    
     .welcome-content {
       flex-direction: column;
     }
     
     .welcome-image {
       width: 100%;
-      max-width: 250px;
-      margin: 0 auto;
+      max-width: 200px;
+      margin: 0 auto 30px;
+    }
+    
+    .welcome-text {
+      font-size: 15px;
+    }
+    
+    .welcome-text .greetings {
+      font-size: 20px;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .welcome-image {
+      max-width: 180px;
+    }
+    
+    .welcome-text {
+      padding: 15px;
+    }
+    
+    .signature-name {
+      font-size: 28px;
+    }
+    
+    .signature-title {
+      font-size: 12px;
     }
   }
