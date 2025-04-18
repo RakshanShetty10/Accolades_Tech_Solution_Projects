@@ -1,25 +1,31 @@
 <?php
-// Start session
+// Include PHPMailer classes
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
+
+// Start session to maintain user state across pages
 session_start();
 
-// Database connection
+// Include database configuration file
 require_once '../../config/config.php';
 
-// Check if user is logged in
+// Check if user is logged in (commented out for development)
 // if(!isset($_SESSION['admin_id'])) {
 //     header("Location: login.php");
 //     exit;
 // }
 
-// Check if ID is provided
+// Validate practitioner ID from URL parameter
 if(!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     header("Location: index.php");
     exit;
 }
 
+// Get and sanitize practitioner ID
 $practitioner_id = intval($_GET['id']);
 
-// Fetch practitioner details
+// Fetch practitioner details with registration type
 $sql = "SELECT p.*, rt.registration_type 
         FROM practitioner p
         LEFT JOIN registration_type_master rt ON p.registration_type_id = rt.registration_type_id
@@ -29,6 +35,7 @@ $stmt->bind_param("i", $practitioner_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
+// Redirect if practitioner not found
 if($result->num_rows == 0) {
     header("Location: index.php");
     exit;
@@ -36,9 +43,9 @@ if($result->num_rows == 0) {
 
 $practitioner = $result->fetch_assoc();
 
-// Simple status correction - if registration number exists, status should be Active
+// Auto-correct status if registration number exists but status is not Active
 if (!empty($practitioner['registration_number']) && $practitioner['registration_status'] !== 'Active') {
-    // Fix the inconsistency
+    // Update status to Active
     $conn->query("UPDATE practitioner SET registration_status = 'Active' WHERE practitioner_id = $practitioner_id");
     
     // Log the correction
@@ -49,12 +56,12 @@ if (!empty($practitioner['registration_number']) && $practitioner['registration_
     $result = $stmt->get_result();
     $practitioner = $result->fetch_assoc();
     
-    // Set notification
+    // Set notification message
     $message = "Status automatically updated to Active because this practitioner has a registration number.";
     $alert_type = "info";
 }
 
-// Fetch education information
+// Fetch education information with college and university details
 $edu_sql = "SELECT e.*, c.college_name, u.university_name
             FROM education_information e
             LEFT JOIN college_master c ON e.college_id = c.college_id
@@ -66,7 +73,7 @@ $edu_stmt->execute();
 $edu_result = $edu_stmt->get_result();
 $education = $edu_result->fetch_assoc();
 
-// Fetch address information
+// Fetch address information for both permanent and correspondence addresses
 $addr_sql = "SELECT * FROM practitioner_address 
              WHERE practitioner_id = ? 
              ORDER BY practitioner_address_type";
@@ -75,12 +82,13 @@ $addr_stmt->bind_param("i", $practitioner_id);
 $addr_stmt->execute();
 $addr_result = $addr_stmt->get_result();
 
+// Organize addresses by type
 $addresses = [];
 while($row = $addr_result->fetch_assoc()) {
     $addresses[$row['practitioner_address_type']] = $row;
 }
 
-// Process status update if requested
+// Handle status update if form is submitted
 if(isset($_POST['update_status'])) {
     $new_status = $_POST['status'];
     
@@ -94,13 +102,169 @@ if(isset($_POST['update_status'])) {
         
         // Refresh practitioner data
         $practitioner['registration_status'] = $new_status;
+        
+        // Send email notification when status is set to Approved
+        if($new_status == 'Approved') {
+            require '../../phpmailer/Exception.php';
+            require '../../phpmailer/PHPMailer.php';
+            require '../../phpmailer/SMTP.php';
+            
+            try {
+                // Create a new PHPMailer instance
+                $mail = new PHPMailer(true);
+                
+                // Server settings
+                $mail->SMTPDebug = 0; // Set to 0 for production, 2 for debugging
+                $mail->isSMTP();
+                $mail->Host       = 'smtp.gmail.com'; // Specify SMTP server
+                $mail->SMTPAuth   = true;
+                $mail->Username   = 'anonymous10unknown10@gmail.com'; // Your SMTP username
+                $mail->Password   = 'kdxx fkix stuj nrue'; // Your SMTP password
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port       = 587;
+                
+                // Recipients
+                $mail->setFrom('anonymous10unknown10@gmail.com', 'KSAHC Admin');
+                $mail->addAddress($practitioner['practitioner_email_id'], $practitioner['practitioner_name']);
+                $mail->addReplyTo('anonymous10unknown10@gmail.com', 'KSAHC Admin');
+                
+                // Content
+                $mail->isHTML(true);
+                $mail->Subject = 'Your KSAHC Registration Status Update';
+                
+                // Email template with enhanced styling
+                $htmlBody = '
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            line-height: 1.6;
+                            color: #333;
+                            background-color: #f9f9f9;
+                            margin: 0;
+                            padding: 0;
+                        }
+                        .container {
+                            max-width: 600px;
+                            margin: 0 auto;
+                            padding: 0;
+                            background-color: #ffffff;
+                            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                        }
+                        .header {
+                            background-color: #4e73df;
+                            color: white;
+                            padding: 25px;
+                            text-align: center;
+                            border-radius: 5px 5px 0 0;
+                        }
+                        .header h2 {
+                            margin: 0;
+                            font-size: 24px;
+                        }
+                        .header img {
+                            max-width: 150px;
+                            margin-bottom: 10px;
+                        }
+                        .content {
+                            padding: 30px;
+                            background-color: #ffffff;
+                            border-radius: 0 0 5px 5px;
+                        }
+                        .greeting {
+                            font-size: 18px;
+                            font-weight: bold;
+                            margin-bottom: 15px;
+                        }
+                        .message-box {
+                            background-color: #f8f9fc;
+                            border-left: 5px solid #1cc88a;
+                            padding: 20px;
+                            margin: 20px 0;
+                            border-radius: 0 5px 5px 0;
+                        }
+                        .message-title {
+                            font-weight: bold;
+                            color: #1cc88a;
+                            margin-bottom: 10px;
+                            font-size: 16px;
+                        }
+                        .footer {
+                            background-color: #f1f3f9;
+                            padding: 15px;
+                            text-align: center;
+                            font-size: 12px;
+                            color: #666;
+                            border-top: 1px solid #e3e6f0;
+                        }
+                        .button {
+                            display: inline-block;
+                            background-color: #4e73df;
+                            color: white;
+                            padding: 10px 20px;
+                            text-decoration: none;
+                            border-radius: 5px;
+                            margin-top: 15px;
+                            font-weight: bold;
+                        }
+                        .button:hover {
+                            background-color: #375bd1;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h2>Karnataka State Allied & Healthcare Council</h2>
+                        </div>
+                        <div class="content">
+                            <div class="greeting">Dear ' . htmlspecialchars($practitioner['practitioner_name']) . ',</div>
+                            <p>We are pleased to inform you that your application to the Karnataka State Allied & Healthcare Council has been <strong>Approved</strong>.</p>
+                            
+                            <div class="message-box">
+                                <div class="message-title">Application Status Update:</div>
+                                <p>Your registration status has been updated to <strong>Approved</strong>.</p>
+                                <p>Your application is now in the final stage of processing. The next step will be the generation of your registration number. You will receive another notification once that process is complete.</p>
+                            </div>
+                            
+                            <p>Please note that you will receive your official registration number and login credentials in a separate email once the central administration completes the final verification.</p>
+                            <p>Thank you for your patience during this process.</p>
+                            <p>Best regards,<br><strong>KSAHC Administration</strong></p>
+                            
+                            <a href="https://ksahc.karnataka.gov.in" class="button">Visit KSAHC Website</a>
+                        </div>
+                        <div class="footer">
+                            <p>This is an automated message. Please do not reply to this email.</p>
+                            <p>&copy; ' . date('Y') . ' Karnataka State Allied & Healthcare Council. All Rights Reserved.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                ';
+                
+                $mail->Body = $htmlBody;
+                $mail->AltBody = 'Dear ' . $practitioner['practitioner_name'] . ', Your application to the Karnataka State Allied & Healthcare Council has been approved. You will receive your registration number soon.';
+                
+                if($mail->send()) {
+                    $message .= " An email notification has been sent to the practitioner.";
+                } else {
+                    error_log("Failed to send approval email to practitioner ID {$practitioner_id}: " . $mail->ErrorInfo);
+                }
+            } catch (Exception $e) {
+                error_log("Exception while sending approval email to practitioner ID {$practitioner_id}: " . $e->getMessage());
+            }
+        }
     } else {
         $message = "Error updating status: " . $conn->error;
         $alert_type = "danger";
     }
 }
 
-// Page title
+// Set page title
 $pageTitle = "View Practitioner Details | Karnataka State Allied & Healthcare Council";
 ?>
 
