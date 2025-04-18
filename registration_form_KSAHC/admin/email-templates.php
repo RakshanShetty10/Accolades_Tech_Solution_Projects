@@ -1,7 +1,7 @@
 <?php
 /**
  * Email Templates and Functions for KSAHC
- * This file contains email template functionality used across the application
+ * This file contain email template functionality used across the application
  */
 
 // Include PHPMailer classes
