@@ -1402,586 +1402,189 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 			</div>
 			<!-- End - Page Title & Breadcrumb -->
 			
-			<div class="container-fluid">
-				<div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="mt-4 mb-4">Applied Practitioner List For Approval</h1>
-                
-                <!-- Display notifications -->
-                <?php if(isset($message)): ?>
-                <div class="alert alert-<?php echo $alert_type; ?> alert-dismissible fade show" role="alert">
-                    <i class="fas fa-<?php echo $alert_type == 'success' ? 'check-circle' : ($alert_type == 'danger' ? 'exclamation-circle' : 'info-circle'); ?> mr-2"></i>
-                    <?php echo $message; ?>
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+			<?php
+// Assume $conn is already defined and connected to the database
+$status_filter = isset($_GET['status']) ? strtolower($_GET['status']) : 'pending';
+$valid_statuses = ['pending', 'approved', 'active', 'inactive'];
+
+// Validate status_filter
+if (!in_array($status_filter, $valid_statuses)) {
+    $status_filter = 'pending';
+}
+
+// Fetch counts for all statuses
+$counts = [
+    'pending' => 0,
+    'approved' => 0,
+    'active' => 0,
+    'inactive' => 0
+];
+
+foreach ($valid_statuses as $status) {
+    $count_sql = "SELECT COUNT(*) as count FROM practitioner WHERE registration_status = '" . ucfirst($status) . "'";
+    $count_result = $conn->query($count_sql);
+    $counts[$status] = $count_result && $count_result->num_rows > 0 ? $count_result->fetch_assoc()['count'] : 0;
+}
+
+// Fetch data for the selected status
+$sql = "SELECT p.*, rt.registration_type 
+        FROM practitioner p
+        LEFT JOIN registration_type_master rt ON p.registration_type_id = rt.registration_type_id
+        WHERE p.registration_status = '" . ucfirst($status_filter) . "'
+        ORDER BY p.practitioner_id DESC";
+$result = $conn->query($sql);
+?>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4 mb-4">Applied Practitioner List For Approval</h1>
+        
+        <!-- Display notifications -->
+        <?php if (isset($message)): ?>
+        <div class="alert alert-<?php echo $alert_type; ?> alert-dismissible fade show" role="alert">
+            <i class="fas fa-<?php echo $alert_type == 'success' ? 'check-circle' : ($alert_type == 'danger' ? 'exclamation-circle' : 'info-circle'); ?> mr-2"></i>
+            <?php echo $message; ?>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">×</span>
+            </button>
+        </div>
+        <?php endif; ?>
+        
+        <?php if (isset($auto_message)): ?>
+        <div class="alert alert-<?php echo $auto_alert_type; ?> alert-dismissible fade show" role="alert">
+            <i class="fas fa-sync-alt mr-2"></i>
+            <?php echo $auto_message; ?>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">×</span>
+            </button>
+        </div>
+        <?php endif; ?>
+    </div>
+    
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card">
+                <div class="card-body overflow-hidden">
+                    <div class="row gx-5 gy-3">
+                        <div class="col-xl-3 col-sm-6 col-6">
+                            <a href="?status=pending" class="text-decoration-none">
+                                <div class="d-flex align-items-center <?php echo $status_filter == 'pending' ? 'bg-light p-3 rounded' : ''; ?>">
+                                    <h2 class="text-warning my-0 fs-3 me-2"><?php echo $counts['pending']; ?></h2>
+                                    <span class="text-secondary fw-medium fs-5">Pending</span>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-xl-3 col-sm-6 col-6">
+                            <a href="?status=approved" class="text-decoration-none">
+                                <div class="d-flex align-items-center <?php echo $status_filter == 'approved' ? 'bg-light p-3 rounded' : ''; ?>">
+                                    <h2 class="text-success my-0 fs-3 me-2"><?php echo $counts['approved']; ?></h2>
+                                    <span class="text-secondary fw-medium fs-5">Approved</span>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-xl-3 col-sm-6 col-6">
+                            <a href="?status=active" class="text-decoration-none">
+                                <div class="d-flex align-items-center <?php echo $status_filter == 'active' ? 'bg-light p-3 rounded' : ''; ?>">
+                                    <h2 class="text-primary my-0 fs-3 me-2"><?php echo $counts['active']; ?></h2>
+                                    <span class="text-secondary fw-medium fs-5">Active</span>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-xl-3 col-sm-6 col-6">
+                            <a href="?status=inactive" class="text-decoration-none">
+                                <div class="d-flex align-items-center <?php echo $status_filter == 'inactive' ? 'bg-light p-3 rounded' : ''; ?>">
+                                    <h2 class="text-danger my-0 fs-3 me-2"><?php echo $counts['inactive']; ?></h2>
+                                    <span class="text-secondary fw-medium fs-5">Inactive</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <?php endif; ?>
-                
-                <?php if(isset($auto_message)): ?>
-                <div class="alert alert-<?php echo $auto_alert_type; ?> alert-dismissible fade show" role="alert">
-                    <i class="fas fa-sync-alt mr-2"></i>
-                    <?php echo $auto_message; ?>
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+            </div>
+        </div>
+        
+        <div class="col-xl-12">
+            <div class="card">
+                <div class="card-header border-0">
+                    <h4 class="card-title"><?php echo ucfirst($status_filter); ?> Practitioners</h4>
+                    <div id="tableEmpoloyeesTBL1ExcelBTN"></div>
                 </div>
-                <?php endif; ?>
-
-
-
-
-				</div>
-				
-				<div class="row">
-					<div class="col-xl-12">
-						<div class="card">
-							<div class="card-body overflow-hidden">
-								<div class="row gx-5 gy-3">
-									<div class="col-xl-2 col-sm-4 col-6 border-end">
-										<div class="d-flex align-items-center">
-											<h2 class="text-primary my-0 fs-3 me-2">8</h2> 
-											<span class="text-secondary fw-medium fs-5">Not Started</span>
-										</div>
-										<span>Tasks assigne</span>
-									</div>
-									<div class="col-xl-2 col-sm-4 col-6 border-end">
-										<div class="d-flex align-items-center ">
-											<h2 class="text-purple my-0 fs-3 me-2">7</h2>
-											<span class="text-secondary fw-medium fs-5">In Progress</span>
-										</div>
-										<span>Tasks assigne</span>
-									</div>
-									<div class="col-xl-2 col-sm-4 col-6 border-end">
-										<div class="d-flex align-items-center">
-											<h2 class="text-warning my-0 fs-3 me-2">13</h2>
-											<span class="text-secondary fw-medium fs-5" >Testing</span>
-										</div>
-										<span>Tasks assigne</span>
-									</div>
-									<div class="col-xl-2 col-sm-4 col-6 border-end">
-										<div class="d-flex align-items-center">
-											<h2 class="text-danger my-0 fs-3 me-2">11</h2>
-											<span class="text-secondary fw-medium fs-5">Awaiting</span>
-										</div>	
-										<span>Tasks assigne</span>
-									</div>
-									<div class="col-xl-2 col-sm-4 col-6 border-end">
-										<div class="d-flex align-items-center">
-											<h2 class="text-success my-0 fs-3 me-2">21</h2>
-											<span class="text-secondary fw-medium fs-5">Complete</span>
-										</div>
-										<span>Tasks assigne</span>
-									</div>
-									<div class="col-xl-2 col-sm-4 col-6">
-										<div class="d-flex align-items-center">	
-											<h2 class="text-danger my-0 fs-3 me-2">16</h2>
-											<span class="text-secondary fw-medium fs-5">pending</span>
-										</div>	
-										<span>Tasks assigne</span>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-					
-					<div class="col-xl-12">
-						<div class="card">
-							<div class="card-header border-0">
-								<h4 class="card-title">Pending Applications</h4>
-								<div id="tableEmpoloyeesTBL1ExcelBTN"></div>
-							</div>
-							<div class="card-body table-card-body px-0 pt-0 pb-1">
-								<div class="table-responsive check-wrapper">
-									<table id="taskTable" class="table">
-										<thead class="table-light text-nowrap">
-											<tr>
-												<th class="mw-50 sorting-disabled">
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input check-all" id="select-all-pending" required="">
-													</div>
-												</th>
-												<th class="mw-50">ID</th>
-												<th class="mw-200">Name</th>
-												<th class="mw-100">Registration Type</th>
-												<th class="mw-100">Contact</th>
-												<th class="mw-100">Registration Date</th>
-												<th class="mw-120">Actions</th>
-												<!-- <th class="mw-100">Tags</th>
-												<th class="mw-100 text-end">Priority</th> -->
-
-                                                
-											</tr>
-
-
-										</thead>
-										<tbody class="text-nowrap">
-                                        <?php
-                                                $pending_sql = "SELECT p.*, rt.registration_type 
-                                                              FROM practitioner p
-                                                              LEFT JOIN registration_type_master rt ON p.registration_type_id = rt.registration_type_id
-                                                              WHERE p.registration_status = 'Pending'
-                                                              ORDER BY p.practitioner_id DESC";
-                                                $pending_result = $conn->query($pending_sql);
-                                                if ($pending_result && $pending_result->num_rows > 0):
-                                                    while($row = $pending_result->fetch_assoc()):
-                                                ?>
-
-
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-													
-                                                        <input type="checkbox" class="form-check-input check-input" required="" name="selected_practitioners[]" value="<?php echo $row['practitioner_id']; ?>" class="practitioner-checkbox">
-													</div>
-												</td>
-												
-												<td>
-													<div class="clearfix">
-														<h6 class="mb-1"><?php echo $row['practitioner_id']; ?></h6>
-														<!-- <span>INV-100023456</span> -->
-													</div>
-												</td>
-											
-												<td><?php echo htmlspecialchars($row['practitioner_name']); ?></td>
-												<td><?php echo htmlspecialchars($row['registration_type']); ?></td>
-
-                                                <td> <div><i class="fas fa-envelope text-muted mr-1"></i> <?php echo htmlspecialchars($row['practitioner_email_id']); ?></div>
-                                                <div><i class="fas fa-phone text-muted mr-1"></i> <?php echo htmlspecialchars($row['practitioner_mobile_number']); ?></div></td>
-
-                                                <td>
-                                                <?php echo date('d M Y', strtotime($row['registration_date'])); ?>
-                                                </td>
-
-                                                <td>
+                <div class="card-body table-card-body px-0 pt-0 pb-1">
+                    <div class="table-responsive check-wrapper">
+                        <table id="taskTable" class="table">
+                            <thead class="table-light text-nowrap">
+                                <tr>
+                                    <th class="mw-50 sorting-disabled">
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input check-all" id="select-all-<?php echo $status_filter; ?>" required="">
+                                        </div>
+                                    </th>
+                                    <th class="mw-50">ID</th>
+                                    <th class="mw-200">Name</th>
+                                    <th class="mw-100">Registration Type</th>
+                                    <th class="mw-100">Contact Rubber Stamp</th>
+                                    <th class="mw-100">Registration Date</th>
+                                    <th class="mw-120">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-nowrap">
+                                <?php if ($result && $result->num_rows > 0): ?>
+                                    <?php while ($row = $result->fetch_assoc()): ?>
+                                        <tr>
+                                            <td>
+                                                <div class="form-check custom-checkbox">
+                                                    <input type="checkbox" class="form-check-input check-input" required="" name="selected_practitioners[]" value="<?php echo $row['practitioner_id']; ?>" class="practitioner-checkbox">
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="clearfix">
+                                                    <h6 class="mb-1"><?php echo $row['practitioner_id']; ?></h6>
+                                                </div>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($row['practitioner_name']); ?></td>
+                                            <td><?php echo htmlspecialchars($row['registration_type']); ?></td>
+                                            <td>
+                                                <div><i class="fas fa-envelope text-muted mr-1"></i> <?php echo htmlspecialchars($row['practitioner_email_id']); ?></div>
+                                                <div><i class="fas fa-phone text-muted mr-1"></i> <?php echo htmlspecialchars($row['practitioner_mobile_number']); ?></div>
+                                            </td>
+                                            <td><?php echo date('d M Y', strtotime($row['registration_date'])); ?></td>
+                                            <td>
                                                 <div class="btn-group">
-                                                            <a href="view_practitioner.php?id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-info" title="View Details">
-                                                                <i class="fas fa-eye"></i>
-                                                            </a>
-                                                            <a href="?action=approve&id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-success" title="Approve" onclick="return confirm('Are you sure you want to approve this practitioner?');">
-                                                                <i class="fas fa-check"></i>
-                                                            </a>
-                                                            <a href="?action=reject&id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-danger" title="Reject" onclick="return confirm('Are you sure you want to reject this practitioner?');">
-                                                                <i class="fas fa-times"></i>
-                                                            </a>
-                                                            <button class="btn btn-sm btn-warning send-remark-btn" title="Send Remark" 
-                                                                data-email="<?php echo htmlspecialchars($row['practitioner_email_id']); ?>" 
-                                                                data-name="<?php echo htmlspecialchars($row['practitioner_name']); ?>" 
-                                                                data-id="<?php echo $row['practitioner_id']; ?>">
-                                                                <i class="fas fa-comment"></i>
-                                                            </button>
-                                                        </div>
-                                                </td>
-
-
-
-													
-												<!-- <td>
-													<span class="badge-sm rounded badge-primary light me-1">Issue</span>
-													<span class="badge-sm rounded badge-primary light ms-1">HTML</span>
-												</td>
-												<td class="text-end">
-													<div class="dropdown dropdown-badge dropdown-sm">
-														<button type="button" class="btn btn-xs light dropdown-toggle btn-primary" data-bs-toggle="dropdown" aria-expanded="false">
-															Medium
-														</button>
-														<ul class="dropdown-menu dropdown-badge-menu">
-															<li><a class="dropdown-item" data-badge="btn-primary" href="javascript:void(0);">Medium</a></li>
-															<li><a class="dropdown-item" data-badge="btn-success" href="javascript:void(0);">High</a></li>
-															<li><a class="dropdown-item" data-badge="btn-danger" href="javascript:void(0);">Low</a></li>
-														</ul>
-													</div>
-												</td> -->
-											</tr>
-                                            <?php endwhile; ?>
-                                                <?php else: ?>
-                                                <tr>
-                                                    <td colspan="7" class="text-center">No pending applications found</td>
-                                                </tr>
-                                                <?php endif; ?>
-											
-										</tbody>
-									</table>
-								</div>
-							</div>
-						</div>
-					</div>
-
-
-
-
-                    <div class="col-xl-12">
-						<div class="card">
-							<div class="card-header border-0">
-								<h4 class="card-title">Approved Applications</h4>
-								<div id="tableEmpoloyeesTBL1ExcelBTN"></div>
-							</div>
-							<div class="card-body table-card-body px-0 pt-0 pb-1">
-								<div class="table-responsive check-wrapper">
-									<table id="taskTable" class="table">
-										<thead class="table-light text-nowrap">
-											<tr>
-												<th class="mw-50 sorting-disabled">
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input check-all" id="select-all-pending" required="">
-													</div>
-												</th>
-												<th class="mw-50">ID</th>
-												<th class="mw-200">Name</th>
-												<th class="mw-100">Registration Type</th>
-												<th class="mw-100">Contact</th>
-												<th class="mw-100">Registration Date</th>
-												<th class="mw-120">Actions</th>
-												<!-- <th class="mw-100">Tags</th>
-												<th class="mw-100 text-end">Priority</th> -->
-
-                                                
-											</tr>
-
-
-										</thead>
-										<tbody class="text-nowrap">
-                                        <?php
-                                            $approved_sql = "SELECT p.*, rt.registration_type 
-                                                           FROM practitioner p
-                                                           LEFT JOIN registration_type_master rt ON p.registration_type_id = rt.registration_type_id
-                                                           WHERE p.registration_status = 'Approved'
-                                                           ORDER BY p.practitioner_id DESC";
-                                            $approved_result = $conn->query($approved_sql);
-                                            if ($approved_result && $approved_result->num_rows > 0):
-                                                while($row = $approved_result->fetch_assoc()):
-                                            ?>
-
-
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-													
-                                                        <input type="checkbox" class="form-check-input check-input" required="" name="selected_practitioners[]" value="<?php echo $row['practitioner_id']; ?>" class="practitioner-checkbox">
-													</div>
-												</td>
-												
-												<td>
-													<div class="clearfix">
-														<h6 class="mb-1"><?php echo $row['practitioner_id']; ?></h6>
-														<!-- <span>INV-100023456</span> -->
-													</div>
-												</td>
-											
-												<td><?php echo htmlspecialchars($row['practitioner_name']); ?></td>
-												<td><?php echo htmlspecialchars($row['registration_type']); ?></td>
-
-                                                <td> <div><i class="fas fa-envelope text-muted mr-1"></i> <?php echo htmlspecialchars($row['practitioner_email_id']); ?></div>
-                                                <div><i class="fas fa-phone text-muted mr-1"></i> <?php echo htmlspecialchars($row['practitioner_mobile_number']); ?></div></td>
-
-                                                <td>
-                                                <?php echo date('d M Y', strtotime($row['registration_date'])); ?>
-                                                </td>
-
-                                                <td>
-                                                <div class="btn-group">
-                                                            <a href="view_practitioner.php?id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-info" title="View Details">
-                                                                <i class="fas fa-eye"></i>
-                                                            </a>
-                                                            <a href="?action=approve&id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-success" title="Approve" onclick="return confirm('Are you sure you want to approve this practitioner?');">
-                                                                <i class="fas fa-check"></i>
-                                                            </a>
-                                                            <a href="?action=reject&id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-danger" title="Reject" onclick="return confirm('Are you sure you want to reject this practitioner?');">
-                                                                <i class="fas fa-times"></i>
-                                                            </a>
-                                                            <button class="btn btn-sm btn-warning send-remark-btn" title="Send Remark" 
-                                                                data-email="<?php echo htmlspecialchars($row['practitioner_email_id']); ?>" 
-                                                                data-name="<?php echo htmlspecialchars($row['practitioner_name']); ?>" 
-                                                                data-id="<?php echo $row['practitioner_id']; ?>">
-                                                                <i class="fas fa-comment"></i>
-                                                            </button>
-                                                        </div>
-                                                </td>
-
-
-
-													
-												<!-- <td>
-													<span class="badge-sm rounded badge-primary light me-1">Issue</span>
-													<span class="badge-sm rounded badge-primary light ms-1">HTML</span>
-												</td>
-												<td class="text-end">
-													<div class="dropdown dropdown-badge dropdown-sm">
-														<button type="button" class="btn btn-xs light dropdown-toggle btn-primary" data-bs-toggle="dropdown" aria-expanded="false">
-															Medium
-														</button>
-														<ul class="dropdown-menu dropdown-badge-menu">
-															<li><a class="dropdown-item" data-badge="btn-primary" href="javascript:void(0);">Medium</a></li>
-															<li><a class="dropdown-item" data-badge="btn-success" href="javascript:void(0);">High</a></li>
-															<li><a class="dropdown-item" data-badge="btn-danger" href="javascript:void(0);">Low</a></li>
-														</ul>
-													</div>
-												</td> -->
-											</tr>
-                                            <?php endwhile; ?>
-                                                <?php else: ?>
-                                                <tr>
-                                                    <td colspan="7" class="text-center">No pending applications found</td>
-                                                </tr>
-                                                <?php endif; ?>
-											
-										</tbody>
-									</table>
-								</div>
-							</div>
-						</div>
-					</div>
-
-
-
-
-
-
-
-                    <div class="col-xl-12">
-						<div class="card">
-							<div class="card-header border-0">
-								<h4 class="card-title">Active Applications</h4>
-								<div id="tableEmpoloyeesTBL1ExcelBTN"></div>
-							</div>
-							<div class="card-body table-card-body px-0 pt-0 pb-1">
-								<div class="table-responsive check-wrapper">
-									<table id="taskTable" class="table">
-										<thead class="table-light text-nowrap">
-											<tr>
-												<th class="mw-50 sorting-disabled">
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input check-all" id="select-all-pending" required="">
-													</div>
-												</th>
-												<th class="mw-50">ID</th>
-												<th class="mw-200">Name</th>
-												<th class="mw-100">Registration Type</th>
-												<th class="mw-100">Contact</th>
-												<th class="mw-100">Registration Date</th>
-												<th class="mw-120">Actions</th>
-												<!-- <th class="mw-100">Tags</th>
-												<th class="mw-100 text-end">Priority</th> -->
-
-                                                
-											</tr>
-
-
-										</thead>
-										<tbody class="text-nowrap">
-                                        <?php
-                                            $active_sql = "SELECT p.*, rt.registration_type 
-                                                         FROM practitioner p
-                                                         LEFT JOIN registration_type_master rt ON p.registration_type_id = rt.registration_type_id
-                                                         WHERE p.registration_status = 'Active'
-                                                         ORDER BY p.practitioner_id DESC";
-                                            $active_result = $conn->query($active_sql);
-                                            if ($active_result && $active_result->num_rows > 0):
-                                                while($row = $active_result->fetch_assoc()):
-                                            ?>
-
-
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-													
-                                                        <input type="checkbox" class="form-check-input check-input" required="" name="selected_practitioners[]" value="<?php echo $row['practitioner_id']; ?>" class="practitioner-checkbox">
-													</div>
-												</td>
-												
-												<td>
-													<div class="clearfix">
-														<h6 class="mb-1"><?php echo $row['practitioner_id']; ?></h6>
-														<!-- <span>INV-100023456</span> -->
-													</div>
-												</td>
-											
-												<td><?php echo htmlspecialchars($row['practitioner_name']); ?></td>
-												<td><?php echo htmlspecialchars($row['registration_type']); ?></td>
-
-                                                <td> <div><i class="fas fa-envelope text-muted mr-1"></i> <?php echo htmlspecialchars($row['practitioner_email_id']); ?></div>
-                                                <div><i class="fas fa-phone text-muted mr-1"></i> <?php echo htmlspecialchars($row['practitioner_mobile_number']); ?></div></td>
-
-                                                <td>
-                                                <?php echo date('d M Y', strtotime($row['registration_date'])); ?>
-                                                </td>
-
-                                                <td>
-                                                <div class="btn-group">
-                                                        <a href="view_practitioner.php?id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-info" title="View Details">
-                                                            <i class="fas fa-eye"></i>
+                                                    <a href="view_practitioner.php?id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <?php if ($status_filter == 'pending' || $status_filter == 'approved'): ?>
+                                                        <a href="?action=approve&id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-success" title="Approve" onclick="return confirm('Are you sure you want to approve this practitioner?');">
+                                                            <i class="fas fa-check"></i>
                                                         </a>
-                                                        <button class="btn btn-sm btn-warning send-remark-btn" title="Send Remark" 
+                                                        <a href="?action=reject&id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-danger" title="Reject" onclick="return confirm('Are you sure you want to reject this practitioner?');">
+                                                            <i class="fas fa-times"></i>
+                                                        </a>
+                                                    <?php endif; ?>
+                                                    <button class="btn btn-sm btn-warning send-remark-btn" title="Send Remark" 
                                                             data-email="<?php echo htmlspecialchars($row['practitioner_email_id']); ?>" 
                                                             data-name="<?php echo htmlspecialchars($row['practitioner_name']); ?>" 
                                                             data-id="<?php echo $row['practitioner_id']; ?>">
-                                                            <i class="fas fa-comment"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-
-
-
-													
-												<!-- <td>
-													<span class="badge-sm rounded badge-primary light me-1">Issue</span>
-													<span class="badge-sm rounded badge-primary light ms-1">HTML</span>
-												</td>
-												<td class="text-end">
-													<div class="dropdown dropdown-badge dropdown-sm">
-														<button type="button" class="btn btn-xs light dropdown-toggle btn-primary" data-bs-toggle="dropdown" aria-expanded="false">
-															Medium
-														</button>
-														<ul class="dropdown-menu dropdown-badge-menu">
-															<li><a class="dropdown-item" data-badge="btn-primary" href="javascript:void(0);">Medium</a></li>
-															<li><a class="dropdown-item" data-badge="btn-success" href="javascript:void(0);">High</a></li>
-															<li><a class="dropdown-item" data-badge="btn-danger" href="javascript:void(0);">Low</a></li>
-														</ul>
-													</div>
-												</td> -->
-											</tr>
-                                            <?php endwhile; ?>
-                                                <?php else: ?>
-                                                <tr>
-                                                    <td colspan="7" class="text-center">No pending applications found</td>
-                                                </tr>
-                                                <?php endif; ?>
-											
-										</tbody>
-									</table>
-								</div>
-							</div>
-						</div>
-					</div>
-
-
-
-
-
-                    <div class="col-xl-12">
-						<div class="card">
-							<div class="card-header border-0">
-								<h4 class="card-title">Rejected Applications</h4>
-								<div id="tableEmpoloyeesTBL1ExcelBTN"></div>
-							</div>
-							<div class="card-body table-card-body px-0 pt-0 pb-1">
-								<div class="table-responsive check-wrapper">
-									<table id="taskTable" class="table">
-										<thead class="table-light text-nowrap">
-											<tr>
-												<th class="mw-50 sorting-disabled">
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input check-all" id="select-all-pending" required="">
-													</div>
-												</th>
-												<th class="mw-50">ID</th>
-												<th class="mw-200">Name</th>
-												<th class="mw-100">Registration Type</th>
-												<th class="mw-100">Contact</th>
-												<th class="mw-100">Registration Date</th>
-												<th class="mw-120">Actions</th>
-												<!-- <th class="mw-100">Tags</th>
-												<th class="mw-100 text-end">Priority</th> -->
-
-                                                
-											</tr>
-
-
-										</thead>
-										<tbody class="text-nowrap">
-                                        <?php
-                                            $inactive_sql = "SELECT p.*, rt.registration_type 
-                                                           FROM practitioner p
-                                                           LEFT JOIN registration_type_master rt ON p.registration_type_id = rt.registration_type_id
-                                                           WHERE p.registration_status = 'Inactive'
-                                                           ORDER BY p.practitioner_id DESC";
-                                            $inactive_result = $conn->query($inactive_sql);
-                                            if ($inactive_result && $inactive_result->num_rows > 0):
-                                                while($row = $inactive_result->fetch_assoc()):
-                                            ?>
-
-
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-													
-                                                        <input type="checkbox" class="form-check-input check-input" required="" name="selected_practitioners[]" value="<?php echo $row['practitioner_id']; ?>" class="practitioner-checkbox">
-													</div>
-												</td>
-												
-												<td>
-													<div class="clearfix">
-														<h6 class="mb-1"><?php echo $row['practitioner_id']; ?></h6>
-														<!-- <span>INV-100023456</span> -->
-													</div>
-												</td>
-											
-												<td><?php echo htmlspecialchars($row['practitioner_name']); ?></td>
-												<td><?php echo htmlspecialchars($row['registration_type']); ?></td>
-
-                                                <td> <div><i class="fas fa-envelope text-muted mr-1"></i> <?php echo htmlspecialchars($row['practitioner_email_id']); ?></div>
-                                                <div><i class="fas fa-phone text-muted mr-1"></i> <?php echo htmlspecialchars($row['practitioner_mobile_number']); ?></div></td>
-
-                                                <td>
-                                                <?php echo date('d M Y', strtotime($row['registration_date'])); ?>
-                                                </td>
-
-                                                <td>
-                                                <div class="btn-group">
-                                                        <a href="view_practitioner.php?id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-info" title="View Details">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                        <button class="btn btn-sm btn-warning send-remark-btn" title="Send Remark" 
-                                                            data-email="<?php echo htmlspecialchars($row['practitioner_email_id']); ?>" 
-                                                            data-name="<?php echo htmlspecialchars($row['practitioner_name']); ?>" 
-                                                            data-id="<?php echo $row['practitioner_id']; ?>">
-                                                            <i class="fas fa-comment"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-
-
-
-													
-												<!-- <td>
-													<span class="badge-sm rounded badge-primary light me-1">Issue</span>
-													<span class="badge-sm rounded badge-primary light ms-1">HTML</span>
-												</td>
-												<td class="text-end">
-													<div class="dropdown dropdown-badge dropdown-sm">
-														<button type="button" class="btn btn-xs light dropdown-toggle btn-primary" data-bs-toggle="dropdown" aria-expanded="false">
-															Medium
-														</button>
-														<ul class="dropdown-menu dropdown-badge-menu">
-															<li><a class="dropdown-item" data-badge="btn-primary" href="javascript:void(0);">Medium</a></li>
-															<li><a class="dropdown-item" data-badge="btn-success" href="javascript:void(0);">High</a></li>
-															<li><a class="dropdown-item" data-badge="btn-danger" href="javascript:void(0);">Low</a></li>
-														</ul>
-													</div>
-												</td> -->
-											</tr>
-                                            <?php endwhile; ?>
-                                                <?php else: ?>
-                                                <tr>
-                                                    <td colspan="7" class="text-center">No pending applications found</td>
-                                                </tr>
-                                                <?php endif; ?>
-											
-										</tbody>
-									</table>
-								</div>
-							</div>
-						</div>
-					</div>
-
-
-
-
-                    
-				</div>
-			
-			</div>
-			
-        </main>
+                                                        <i class="fas fa-comment"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="7" class="text-center">No <?php echo $status_filter; ?> applications found</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</main>
 		<!-- End - Content Body -->
 		
 			<!-- Start - Footer -->
