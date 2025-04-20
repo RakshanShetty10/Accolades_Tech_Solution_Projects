@@ -403,6 +403,9 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
                         </div>
                     </div>
 
+
+                    
+
                     <!-- Approved Tab -->
                     <div class="tab-pane fade" id="approved" role="tabpanel">
                         <div class="card shadow mb-4">

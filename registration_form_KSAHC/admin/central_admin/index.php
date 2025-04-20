@@ -229,6 +229,7 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="css/admin-style.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         body {
             background-color: #f8f9fc;
@@ -394,6 +395,62 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
             padding: 0.5rem 1rem;
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
         }
+        
+        /* Custom styling for Select2 */
+        .select2-container--default .select2-selection--multiple {
+            border: 1px solid #d1d3e2;
+            border-radius: 0.35rem;
+            min-height: 38px;
+        }
+        
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: #4e73df;
+            border: none;
+            color: white;
+            border-radius: 0.25rem;
+            padding: 3px 8px;
+            margin-top: 5px;
+        }
+        
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: white;
+            margin-right: 5px;
+        }
+        
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #d1d3e2;
+        }
+        
+        /* Enhanced stats cards */
+        .stats-card {
+            transition: all 0.3s;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        /* Custom badge styles */
+        .badge-reg-pending {
+            background-color: #f6c23e;
+            color: white;
+        }
+        
+        .badge-reg-active {
+            background-color: #1cc88a;
+            color: white;
+        }
+        
+        /* Dropdown animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .dropdown-menu.show {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
     </style>
 </head>
 <body>
@@ -462,9 +519,123 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
                 </div>
                 <?php endif; ?>
                 
-                <!-- Dashboard Cards -->
-                <!-- <div class="row mb-4">
-                    <div class="col-xl-4 col-md-6 mb-4">
+                <!-- Advanced Filter Section -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-filter mr-2"></i>Filter Options
+                            <button class="btn btn-sm btn-link float-right" type="button" data-toggle="collapse" data-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </h6>
+                    </div>
+                    <div class="collapse show" id="filterCollapse">
+                        <div class="card-body">
+                            <form method="GET" id="filter-form">
+                                <div class="row">
+                                    <div class="col-md-3 mb-3">
+                                        <label for="states"><strong>States</strong></label>
+                                        <select class="form-control select2-multiple" id="states" name="states[]" multiple="multiple">
+                                            <option value="Karnataka" selected>Karnataka</option>
+                                            <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                            <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                            <option value="Assam">Assam</option>
+                                            <option value="Bihar">Bihar</option>
+                                            <option value="Chhattisgarh">Chhattisgarh</option>
+                                            <option value="Goa">Goa</option>
+                                            <option value="Gujarat">Gujarat</option>
+                                            <option value="Haryana">Haryana</option>
+                                            <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                            <option value="Jharkhand">Jharkhand</option>
+                                            <option value="Kerala">Kerala</option>
+                                            <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                            <option value="Maharashtra">Maharashtra</option>
+                                            <option value="Manipur">Manipur</option>
+                                            <option value="Meghalaya">Meghalaya</option>
+                                            <option value="Mizoram">Mizoram</option>
+                                            <option value="Nagaland">Nagaland</option>
+                                            <option value="Odisha">Odisha</option>
+                                            <option value="Punjab">Punjab</option>
+                                            <option value="Rajasthan">Rajasthan</option>
+                                            <option value="Sikkim">Sikkim</option>
+                                            <option value="Tamil Nadu">Tamil Nadu</option>
+                                            <option value="Telangana">Telangana</option>
+                                            <option value="Tripura">Tripura</option>
+                                            <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                            <option value="Uttarakhand">Uttarakhand</option>
+                                            <option value="West Bengal">West Bengal</option>
+                                            <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                                            <option value="Chandigarh">Chandigarh</option>
+                                            <option value="Dadra and Nagar Haveli">Dadra and Nagar Haveli</option>
+                                            <option value="Daman and Diu">Daman and Diu</option>
+                                            <option value="Delhi">Delhi</option>
+                                            <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                                            <option value="Ladakh">Ladakh</option>
+                                            <option value="Lakshadweep">Lakshadweep</option>
+                                            <option value="Puducherry">Puducherry</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="registration-year"><strong>Registration Year</strong></label>
+                                        <select class="form-control" id="registration-year" name="year">
+                                            <option value="">All Years</option>
+                                            <option value="2023" selected>2023</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2019">2019</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="registration-status"><strong>Status</strong></label>
+                                        <select class="form-control" id="registration-status" name="status">
+                                            <option value="">All Statuses</option>
+                                            <option value="Approved">Approved</option>
+                                            <option value="Active">Active</option>
+                                            <option value="Pending">Pending</option>
+                                            <option value="Rejected">Rejected</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="registration-type"><strong>Registration Type</strong></label>
+                                        <select class="form-control" id="registration-type" name="type">
+                                            <option value="">All Types</option>
+                                            <option value="1">Medical Laboratory Scientist</option>
+                                            <option value="2">Radiotherapy Technologist</option>
+                                            <option value="3">Optometrist</option>
+                                            <option value="4">Physiotherapist</option>
+                                            <option value="5">Occupational Therapist</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-9">
+                                        <div class="form-group">
+                                            <label for="search-input"><strong>Search</strong></label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="search-input" name="search" placeholder="Search by name, email, registration number..." value="<?php echo htmlspecialchars($search_term); ?>">
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-primary" type="submit">
+                                                        <i class="fas fa-search mr-1"></i> Search
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end">
+                                        <button type="reset" class="btn btn-secondary btn-block">
+                                            <i class="fas fa-sync-alt mr-1"></i> Reset Filters
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Enhanced Dashboard Cards -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
                         <div class="card border-left-primary shadow h-100 py-2">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
@@ -481,13 +652,13 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
                         </div>
                     </div>
                     
-                    <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
                         <div class="card border-left-success shadow h-100 py-2">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
                                     <div class="col mr-2">
                                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                            Registered Practitioners</div>
+                                            Registered with KSAHC ID</div>
                                         <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $counts['registered']; ?></div>
                                     </div>
                                     <div class="col-auto">
@@ -498,7 +669,7 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
                         </div>
                     </div>
                     
-                    <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
                         <div class="card border-left-warning shadow h-100 py-2">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
@@ -514,9 +685,90 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
                             </div>
                         </div>
                     </div>
-                </div> -->
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-danger shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                            Rejected Applications</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">12</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
-                <!-- Practitioners List -->
+                <!-- State-wise Registration Statistics -->
+                <!-- <div class="row mb-4">
+                    <div class="col-xl-8 col-lg-7">
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="fas fa-chart-bar mr-2"></i>State-wise Registration Statistics
+                                </h6>
+                                <div class="dropdown no-arrow">
+                                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                                        <div class="dropdown-header">View Options:</div>
+                                        <a class="dropdown-item" href="#">Export as PDF</a>
+                                        <a class="dropdown-item" href="#">Export as Excel</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item" href="#">View Full Report</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-bar">
+                                    <div style="height: 300px; background-color: #f8f9fc; display: flex; align-items: center; justify-content: center; border-radius: 5px;">
+                                        <span class="text-gray-500"><i class="fas fa-chart-bar mr-2"></i>State-wise registration chart would appear here</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-4 col-lg-5">
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="fas fa-tasks mr-2"></i>Registration Status
+                                </h6>
+                                <div class="dropdown no-arrow">
+                                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                                        <div class="dropdown-header">View Options:</div>
+                                        <a class="dropdown-item" href="#">Export as PDF</a>
+                                        <a class="dropdown-item" href="#">Export as Excel</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item" href="#">View Full Report</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-pie">
+                                    <div style="height: 300px; background-color: #f8f9fc; display: flex; align-items: center; justify-content: center; border-radius: 5px;">
+                                        <span class="text-gray-500"><i class="fas fa-chart-pie mr-2"></i>Status distribution chart would appear here</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>-->
+                
+               
+
+
+
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-primary">
@@ -534,7 +786,7 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
                                 </div>
                             </form>
                         </div>
-                    </div>
+                    </div> 
                     <div class="card-body">
                         <form method="POST" id="bulk-action-form">
                             <div class="bulk-actions mb-3">
@@ -650,103 +902,122 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     
     <script>
-        // Toggle sidebar
-        $("#menu-toggle").click(function(e) {
-            e.preventDefault();
-            $("#wrapper").toggleClass("toggled");
-        });
-        
-        // Dark mode toggle functionality
+        // Initialize Select2 for state dropdown
         $(document).ready(function() {
-            // Check for saved dark mode preference
-            if (localStorage.getItem('darkMode') === 'enabled') {
-                enableDarkMode();
-            }
+            $('.select2-multiple').select2({
+                placeholder: "Select states",
+                allowClear: true,
+                theme: "classic"
+            });
             
-            // Toggle dark mode
-            $("#darkModeToggle").click(function() {
-                if ($('body').hasClass('dark-mode')) {
-                    disableDarkMode();
-                } else {
+            // Toggle sidebar
+            $("#menu-toggle").click(function(e) {
+                e.preventDefault();
+                $("#wrapper").toggleClass("toggled");
+            });
+            
+            // Dark mode toggle functionality
+            $(document).ready(function() {
+                // Check for saved dark mode preference
+                if (localStorage.getItem('darkMode') === 'enabled') {
                     enableDarkMode();
+                }
+                
+                // Toggle dark mode
+                $("#darkModeToggle").click(function() {
+                    if ($('body').hasClass('dark-mode')) {
+                        disableDarkMode();
+                    } else {
+                        enableDarkMode();
+                    }
+                });
+                
+                function enableDarkMode() {
+                    $('body').addClass('dark-mode');
+                    $('#darkModeToggle i').removeClass('fa-moon').addClass('fa-sun');
+                    localStorage.setItem('darkMode', 'enabled');
+                }
+                
+                function disableDarkMode() {
+                    $('body').removeClass('dark-mode');
+                    $('#darkModeToggle i').removeClass('fa-sun').addClass('fa-moon');
+                    localStorage.setItem('darkMode', null);
                 }
             });
             
-            function enableDarkMode() {
-                $('body').addClass('dark-mode');
-                $('#darkModeToggle i').removeClass('fa-moon').addClass('fa-sun');
-                localStorage.setItem('darkMode', 'enabled');
-            }
+            // Select all checkbox - only allow selection of checkboxes that aren't disabled
+            document.getElementById('select-all').addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('.practitioner-checkbox:not([disabled])');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+            });
             
-            function disableDarkMode() {
-                $('body').removeClass('dark-mode');
-                $('#darkModeToggle i').removeClass('fa-sun').addClass('fa-moon');
-                localStorage.setItem('darkMode', null);
-            }
-        });
-        
-        // Select all checkbox - only allow selection of checkboxes that aren't disabled
-        document.getElementById('select-all').addEventListener('change', function() {
-            const checkboxes = document.querySelectorAll('.practitioner-checkbox:not([disabled])');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
+            // Update "select all" checkbox state - only consider checkboxes that aren't disabled
+            const practitionerCheckboxes = document.querySelectorAll('.practitioner-checkbox:not([disabled])');
+            practitionerCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const selectAll = document.getElementById('select-all');
+                    const enabledCheckboxes = document.querySelectorAll('.practitioner-checkbox:not([disabled])');
+                    const allChecked = [...enabledCheckboxes].every(c => c.checked);
+                    const anyChecked = [...enabledCheckboxes].some(c => c.checked);
+                    selectAll.checked = allChecked;
+                    selectAll.indeterminate = anyChecked && !allChecked;
+                });
             });
-        });
-        
-        // Update "select all" checkbox state - only consider checkboxes that aren't disabled
-        const practitionerCheckboxes = document.querySelectorAll('.practitioner-checkbox:not([disabled])');
-        practitionerCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const selectAll = document.getElementById('select-all');
-                const enabledCheckboxes = document.querySelectorAll('.practitioner-checkbox:not([disabled])');
-                const allChecked = [...enabledCheckboxes].every(c => c.checked);
-                const anyChecked = [...enabledCheckboxes].some(c => c.checked);
-                selectAll.checked = allChecked;
-                selectAll.indeterminate = anyChecked && !allChecked;
-            });
-        });
 
-        // Handle single registration number generation
-        $('.generate-single-reg').click(function(e) {
-            e.preventDefault();
+            // Handle single registration number generation
+            $('.generate-single-reg').click(function(e) {
+                e.preventDefault();
+                
+                if(!confirm('Are you sure you want to generate a registration number for this practitioner?')) {
+                    return;
+                }
+                
+                // Create a temporary form to submit just this practitioner ID
+                var tempForm = $('<form method="POST"></form>');
+                tempForm.append('<input type="hidden" name="generate_reg_id" value="1">');
+                tempForm.append('<input type="hidden" name="selected_practitioners[]" value="' + $(this).data('id') + '">');
+                
+                $('body').append(tempForm);
+                tempForm.submit();
+            });
             
-            if(!confirm('Are you sure you want to generate a registration number for this practitioner?')) {
-                return;
-            }
-            
-            // Create a temporary form to submit just this practitioner ID
-            var tempForm = $('<form method="POST"></form>');
-            tempForm.append('<input type="hidden" name="generate_reg_id" value="1">');
-            tempForm.append('<input type="hidden" name="selected_practitioners[]" value="' + $(this).data('id') + '">');
-            
-            $('body').append(tempForm);
-            tempForm.submit();
-        });
-        
-        <?php if(isset($message) && $alert_type == 'success' && $success_count > 0): ?>
-        // Success animation for registration number generation
-        $(document).ready(function() {
-            // Show success popup
-            const successHtml = `
-                <div id="successPopup">
-                    <div class="success-anim">
-                        <i class="fas fa-check-circle text-success" style="font-size: 80px;"></i>
-                        <h3 class="mt-4 font-weight-bold">Success!</h3>
-                        <p class="mt-3">Generated registration numbers for <?php echo $success_count; ?> practitioners</p>
-                        <p>Status updated from <span class="badge badge-success">Approved</span> to <span class="badge badge-info">Active</span></p>
-                        <p><i class="fas fa-envelope text-primary mr-1"></i> Login credentials sent to practitioner's email</p>
-                        <button class="btn btn-primary mt-3" onclick="document.getElementById('successPopup').remove();">
-                            <i class="fas fa-check mr-1"></i> OK
-                        </button>
+            <?php if(isset($message) && $alert_type == 'success' && $success_count > 0): ?>
+            // Success animation for registration number generation
+            $(document).ready(function() {
+                // Show success popup
+                const successHtml = `
+                    <div id="successPopup">
+                        <div class="success-anim">
+                            <i class="fas fa-check-circle text-success" style="font-size: 80px;"></i>
+                            <h3 class="mt-4 font-weight-bold">Success!</h3>
+                            <p class="mt-3">Generated registration numbers for <?php echo $success_count; ?> practitioners</p>
+                            <p>Status updated from <span class="badge badge-success">Approved</span> to <span class="badge badge-info">Active</span></p>
+                            <p><i class="fas fa-envelope text-primary mr-1"></i> Login credentials sent to practitioner's email</p>
+                            <button class="btn btn-primary mt-3" onclick="document.getElementById('successPopup').remove();">
+                                <i class="fas fa-check mr-1"></i> OK
+                            </button>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+                
+                $('body').append(successHtml);
+            });
+            <?php endif; ?>
             
-            $('body').append(successHtml);
+            // Filter section toggle
+            $('#filterCollapse').on('shown.bs.collapse', function () {
+                $('#filterCollapse').find('button i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            });
+            
+            $('#filterCollapse').on('hidden.bs.collapse', function () {
+                $('#filterCollapse').find('button i').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            });
         });
-        <?php endif; ?>
     </script>
 </body>
 </html>

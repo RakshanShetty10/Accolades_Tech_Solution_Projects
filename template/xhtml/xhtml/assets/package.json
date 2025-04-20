@@ -1,0 +1,17 @@
+{
+  "name": "assets",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "sass": "sass --watch scss/main.scss:css/style.css",
+    "plugins": "sass --watch scss/plugins.scss:css/plugins.css",
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "fullcalendar": "^6.1.15",
+    "sass": "^1.85.1"
+  }
+}
