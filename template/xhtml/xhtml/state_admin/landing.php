@@ -19,28 +19,10 @@ require_once 'email-templates.php';
 //     exit;
 // }
 
-// Auto-correct practitioners with registration numbers but not "Active" status
-$auto_correction_sql = "UPDATE practitioner 
-                      SET registration_status = 'Active' 
-                      WHERE registration_number IS NOT NULL 
-                      AND registration_number != '' 
-                      AND registration_status != 'Active'";
-$correction_result = $conn->query($auto_correction_sql);
-
-// Notify about corrections if any were made
-if ($correction_result && $conn->affected_rows > 0) {
-    $corrected_count = $conn->affected_rows;
-    $auto_message = "$corrected_count practitioner(s) with registration numbers automatically set to Active status.";
-    $auto_alert_type = "info";
-    
-    // Log the correction
-    error_log("Auto-corrected $corrected_count practitioners to Active status (they had registration numbers)");
-}
-
 // Handle bulk actions (approve/reject multiple practitioners)
 if(isset($_POST['bulk_action']) && isset($_POST['selected_practitioners'])) {
     $bulk_action = $_POST['bulk_action'];
-    $selected_practitioners = $_POST['selected_practitioners'];
+    $selected_practitioners = json_decode($_POST['selected_practitioners']);
     
     if($bulk_action == 'approve' || $bulk_action == 'reject') {
         $status = ($bulk_action == 'approve') ? 'Approved' : 'Inactive';
@@ -51,7 +33,7 @@ if(isset($_POST['bulk_action']) && isset($_POST['selected_practitioners'])) {
         $stmt->bind_param("s", $status);
         
         if($stmt->execute()) {
-            $message = "Successfully " . ($bulk_action == 'approve' ? 'approved' : 'Inactive') . " " . count($selected_practitioners) . " practitioners.";
+            $message = "Successfully " . ($bulk_action == 'approve' ? 'approved' : 'rejected') . " " . count($selected_practitioners) . " practitioners.";
             $alert_type = "success";
             
             // Send email notifications for approved practitioners
@@ -1507,7 +1489,19 @@ $result = $conn->query($sql);
             <div class="card">
                 <div class="card-header border-0">
                     <h4 class="card-title"><?php echo ucfirst($status_filter); ?> Practitioners</h4>
-                    <div id="tableEmpoloyeesTBL1ExcelBTN"></div>
+                    <div class="d-flex">
+                        <form method="post" id="bulkActionForm" class="me-2">
+                            <input type="hidden" name="bulk_action" id="bulkAction">
+                            <input type="hidden" name="selected_practitioners" id="selectedPractitioners">
+                            <button type="button" class="btn btn-success me-2" onclick="submitBulkAction('approve')">
+                                <i class="fas fa-check-circle"></i> Approve Selected
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="submitBulkAction('reject')">
+                                <i class="fas fa-times-circle"></i> Reject Selected
+                            </button>
+                        </form>
+                        <div id="tableEmpoloyeesTBL1ExcelBTN"></div>
+                    </div>
                 </div>
                 <div class="card-body table-card-body px-0 pt-0 pb-1">
                     <div class="table-responsive check-wrapper">
@@ -1515,8 +1509,8 @@ $result = $conn->query($sql);
                             <thead class="table-light text-nowrap">
                                 <tr>
                                     <th class="mw-50 sorting-disabled">
-                                        <div class="form-check custom-checkbox">
-                                            <input type="checkbox" class="form-check-input check-all" id="select-all-<?php echo $status_filter; ?>" required="">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="checkAll">
                                         </div>
                                     </th>
                                     <th class="mw-50">ID</th>
@@ -1532,8 +1526,8 @@ $result = $conn->query($sql);
                                     <?php while ($row = $result->fetch_assoc()): ?>
                                         <tr>
                                             <td>
-                                                <div class="form-check custom-checkbox">
-                                                    <input type="checkbox" class="form-check-input check-input" required="" name="selected_practitioners[]" value="<?php echo $row['practitioner_id']; ?>" class="practitioner-checkbox">
+                                                <div class="form-check">
+                                                    <input type="checkbox" class="form-check-input practitioner-checkbox" value="<?php echo $row['practitioner_id']; ?>">
                                                 </div>
                                             </td>
                                             <td>
@@ -1614,67 +1608,62 @@ $result = $conn->query($sql);
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="remarkModalLabel">
-                        <i class="fas fa-envelope mr-2"></i> Send Remark to <span id="recipientNameTitle">Practitioner</span>
+                        <i class="fas fa-envelope me-2"></i> Send Remark to <span id="recipientNameTitle">Practitioner</span>
                     </h5>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="remarkForm">
                         <div class="email-header bg-light p-3 mb-3 rounded">
-                            <div class="form-group">
-                                <label for="recipientEmail" class="font-weight-bold text-muted">
-                                    <i class="fas fa-at mr-1"></i> To:
+                            <div class="mb-3">
+                                <label for="recipientEmail" class="form-label fw-bold text-muted">
+                                    <i class="fas fa-at me-1"></i> To:
                                 </label>
                                 <input type="email" class="form-control-plaintext" id="recipientEmail" readonly>
                             </div>
-                            <div class="form-group mb-0">
-                                <label for="recipientName" class="font-weight-bold text-muted">
-                                    <i class="fas fa-user mr-1"></i> Recipient:
+                            <div class="mb-0">
+                                <label for="recipientName" class="form-label fw-bold text-muted">
+                                    <i class="fas fa-user me-1"></i> Recipient:
                                 </label>
                                 <input type="text" class="form-control-plaintext" id="recipientName" readonly>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label for="remarkMessage" class="font-weight-bold">
-                                <i class="fas fa-comment-alt mr-1"></i> Remark
+                        <div class="mb-3">
+                            <label for="remarkMessage" class="form-label fw-bold">
+                                <i class="fas fa-comment-alt me-1"></i> Remark
                             </label>
                             <textarea class="form-control" id="remarkMessage" rows="6" 
                                 placeholder="Enter your detailed instructions or comments to the practitioner..."></textarea>
-                            <small class="form-text text-muted">
-                                <i class="fas fa-info-circle mr-1"></i> Provide clear instructions about what actions the practitioner needs to take.
-                            </small>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i> Provide clear instructions about what actions the practitioner needs to take.
+                            </div>
                         </div>
                         <input type="hidden" id="practitionerId" value="">
                     </form>
-                    <!-- Loading Spinner -->
-                    <div id="loadingSpinner" class="text-center my-4" style="display: none;">
+                    <div id="loadingSpinner" class="text-center my-4 d-none">
                         <div class="spinner-border text-primary" role="status">
-                            <span class="sr-only">Sending...</span>
+                            <span class="visually-hidden">Sending...</span>
                         </div>
                         <p class="mt-2">Sending email, please wait...</p>
                     </div>
-                    <!-- Success Animation -->
-                    <div id="successAnimation" class="text-center my-4" style="display: none;">
+                    <div id="successAnimation" class="text-center my-4 d-none">
                         <div class="mb-3">
                             <i class="fas fa-check-circle text-success" style="font-size: 60px;"></i>
                         </div>
                         <h4 class="text-success">Email Sent Successfully!</h4>
                         <p class="text-muted">Your remark has been delivered to the practitioner.</p>
                     </div>
-                    <!-- Error Message -->
-                    <div id="errorMessage" class="alert alert-danger" style="display: none;">
-                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <div id="errorMessage" class="alert alert-danger d-none">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
                         <span id="errorText"></span>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                        <i class="fas fa-times mr-1"></i> Close
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Close
                     </button>
                     <button type="button" class="btn btn-primary" id="sendRemarkBtn">
-                        <i class="fas fa-paper-plane mr-1"></i> Send Remark
+                        <i class="fas fa-paper-plane me-1"></i> Send Remark
                     </button>
                 </div>
             </div>
@@ -1706,6 +1695,113 @@ $result = $conn->query($sql);
 	<script src="../assets/js/deznav-init.js"></script>
     <script src="../assets/js/custom.js"></script>
 	
+	<script>
+    // Checkbox functionality
+    document.getElementById('checkAll').addEventListener('change', function() {
+        const checkboxes = document.getElementsByClassName('practitioner-checkbox');
+        for (let checkbox of checkboxes) {
+            checkbox.checked = this.checked;
+        }
+    });
+
+    // Bulk action functionality
+    function submitBulkAction(action) {
+        const checkboxes = document.getElementsByClassName('practitioner-checkbox');
+        const selectedIds = [];
+        
+        for (let checkbox of checkboxes) {
+            if (checkbox.checked) {
+                selectedIds.push(checkbox.value);
+            }
+        }
+
+        if (selectedIds.length === 0) {
+            alert('Please select at least one practitioner');
+            return;
+        }
+
+        if (confirm(`Are you sure you want to ${action} the selected practitioners?`)) {
+            document.getElementById('bulkAction').value = action;
+            document.getElementById('selectedPractitioners').value = JSON.stringify(selectedIds);
+            document.getElementById('bulkActionForm').submit();
+        }
+    }
+
+    // Send Remark functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const remarkModal = new bootstrap.Modal(document.getElementById('remarkModal'));
+        
+        // Handle send remark button clicks
+        document.querySelectorAll('.send-remark-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const email = this.dataset.email;
+                const name = this.dataset.name;
+                const id = this.dataset.id;
+
+                document.getElementById('recipientEmail').value = email;
+                document.getElementById('recipientName').value = name;
+                document.getElementById('practitionerId').value = id;
+                document.getElementById('recipientNameTitle').textContent = name;
+                
+                // Reset form state
+                document.getElementById('remarkMessage').value = '';
+                document.getElementById('loadingSpinner').classList.add('d-none');
+                document.getElementById('successAnimation').classList.add('d-none');
+                document.getElementById('errorMessage').classList.add('d-none');
+                document.getElementById('remarkForm').classList.remove('d-none');
+                document.getElementById('sendRemarkBtn').disabled = false;
+
+                remarkModal.show();
+            });
+        });
+
+        // Handle send remark submission
+        document.getElementById('sendRemarkBtn').addEventListener('click', function() {
+            const email = document.getElementById('recipientEmail').value;
+            const name = document.getElementById('recipientName').value;
+            const message = document.getElementById('remarkMessage').value;
+
+            if (!message.trim()) {
+                alert('Please enter a remark message');
+                return;
+            }
+
+            // Show loading spinner
+            document.getElementById('remarkForm').classList.add('d-none');
+            document.getElementById('loadingSpinner').classList.remove('d-none');
+            this.disabled = true;
+
+            // Send the remark
+            fetch('send_remark.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&message=${encodeURIComponent(message)}`
+            })
+            .then(response => response.text())
+            .then(result => {
+                document.getElementById('loadingSpinner').classList.add('d-none');
+                
+                if (result.includes('successfully')) {
+                    document.getElementById('successAnimation').classList.remove('d-none');
+                    setTimeout(() => {
+                        remarkModal.hide();
+                    }, 2000);
+                } else {
+                    throw new Error(result);
+                }
+            })
+            .catch(error => {
+                document.getElementById('loadingSpinner').classList.add('d-none');
+                document.getElementById('errorMessage').classList.remove('d-none');
+                document.getElementById('errorText').textContent = error.message;
+                document.getElementById('remarkForm').classList.remove('d-none');
+                this.disabled = false;
+            });
+        });
+    });
+    </script>
 </body>
 </html>
 
