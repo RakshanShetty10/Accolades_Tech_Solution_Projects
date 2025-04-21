@@ -13,157 +13,126 @@ require_once '../config/config.php';
 // Include email templates and functions
 require_once 'email-templates.php';
 
-// Check if user is logged in (commented out for development)
-// if(!isset($_SESSION['admin_id'])) {
-//     header("Location: login.php");
-//     exit;
-// }
-
-// Handle bulk actions (approve/reject multiple practitioners)
-if(isset($_POST['bulk_action']) && isset($_POST['selected_practitioners'])) {
-    $bulk_action = $_POST['bulk_action'];
-    $selected_practitioners = json_decode($_POST['selected_practitioners']);
-    
-    if($bulk_action == 'approve' || $bulk_action == 'reject') {
-        $status = ($bulk_action == 'approve') ? 'Approved' : 'Inactive';
-        $ids = implode(',', array_map('intval', $selected_practitioners));
-        
-        $sql = "UPDATE practitioner SET registration_status = ? WHERE practitioner_id IN ($ids)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("s", $status);
-        
-        if($stmt->execute()) {
-            $message = "Successfully " . ($bulk_action == 'approve' ? 'approved' : 'rejected') . " " . count($selected_practitioners) . " practitioners.";
-            $alert_type = "success";
-            
-            // Send email notifications for approved practitioners
-            if($bulk_action == 'approve') {
-                // Get practitioner data for emails
-                $practitioners_sql = "SELECT practitioner_id, practitioner_name, practitioner_email_id FROM practitioner WHERE practitioner_id IN ($ids)";
-                $practitioners_result = $conn->query($practitioners_sql);
-                
-                $email_sent_count = 0;
-                
-                if($practitioners_result && $practitioners_result->num_rows > 0) {
-                    while($practitioner_data = $practitioners_result->fetch_assoc()) {
-                        // Send approval email using the function from email-templates.php
-                        if(sendApprovalEmail($practitioner_data['practitioner_email_id'], $practitioner_data['practitioner_name'], $practitioner_data['practitioner_id'])) {
-                            $email_sent_count++;
-                        }
-                    }
-                    
-                    if($email_sent_count > 0) {
-                        $message .= " Email notifications sent to $email_sent_count practitioners.";
-                    }
-                }
-            }
-        } else {
-            $message = "Error updating status: " . $conn->error;
-            $alert_type = "danger";
-        }
-    }
+// Validate practitioner ID from URL parameter
+if(!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+    header("Location: index.php");
+    exit;
 }
 
-// Handle individual status changes (approve/reject single practitioner)
-if(isset($_GET['action']) && isset($_GET['id'])) {
-    $id = intval($_GET['id']);
-    $action = $_GET['action'];
-    
-    if($action == 'approve' || $action == 'reject') {
-        $status = ($action == 'approve') ? 'Approved' : 'Inactive';
-        
-        $sql = "UPDATE practitioner SET registration_status = ? WHERE practitioner_id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("si", $status, $id);
-        
-        if($stmt->execute()) {
-            $message = "Practitioner has been " . ($action == 'approve' ? 'approved' : 'Inactive') . ".";
-            $alert_type = "success";
-            
-            // Send email notification when status is set to Approved
-            if($action == 'approve') {
-                // Get practitioner data
-                $get_practitioner_sql = "SELECT practitioner_name, practitioner_email_id FROM practitioner WHERE practitioner_id = ?";
-                $get_stmt = $conn->prepare($get_practitioner_sql);
-                $get_stmt->bind_param("i", $id);
-                $get_stmt->execute();
-                $result = $get_stmt->get_result();
-                
-                if($result->num_rows > 0) {
-                    $practitioner_data = $result->fetch_assoc();
-                    
-                    // Send approval email using the function from email-templates.php
-                    if(sendApprovalEmail($practitioner_data['practitioner_email_id'], $practitioner_data['practitioner_name'], $id)) {
-                        $message .= " An email notification has been sent to the practitioner.";
-                    }
-                }
-            }
-        } else {
-            $message = "Error updating status: " . $conn->error;
-            $alert_type = "danger";
-        }
-    }
-}
+// Get and sanitize practitioner ID
+$practitioner_id = intval($_GET['id']);
 
-// Get total counts for dashboard statistics
-$total_sql = "SELECT 
-    COUNT(*) as total, 
-    SUM(CASE WHEN registration_status = 'Approved' THEN 1 ELSE 0 END) as approved,
-    SUM(CASE WHEN registration_status = 'Active' THEN 1 ELSE 0 END) as active,
-    SUM(CASE WHEN registration_status = 'Pending' THEN 1 ELSE 0 END) as pending,
-    SUM(CASE WHEN registration_status = 'Inactive' THEN 1 ELSE 0 END) as Inactive
-FROM practitioner";
-
-$total_result = $conn->query($total_sql);
-$counts = $total_result->fetch_assoc();
-
-// Set up pagination parameters
-$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-$limit = 10;
-$offset = ($page - 1) * $limit;
-
-// Get filter parameters from URL
-$status_filter = isset($_GET['status']) ? $_GET['status'] : '';
-$search_term = isset($_GET['search']) ? $_GET['search'] : '';
-
-// Build WHERE clause for filtering
-$where_clause = "WHERE 1=1";
-if($status_filter) {
-    $where_clause .= " AND registration_status = '" . $conn->real_escape_string($status_filter) . "'";
-}
-
-if($search_term) {
-    $where_clause .= " AND (practitioner_name LIKE '%" . $conn->real_escape_string($search_term) . "%' OR 
-                           practitioner_email_id LIKE '%" . $conn->real_escape_string($search_term) . "%' OR
-                           practitioner_mobile_number LIKE '%" . $conn->real_escape_string($search_term) . "%')";
-}
-
-// Fetch practitioners with pagination and filters
+// Fetch practitioner details with registration type
 $sql = "SELECT p.*, rt.registration_type 
         FROM practitioner p
         LEFT JOIN registration_type_master rt ON p.registration_type_id = rt.registration_type_id
-        $where_clause
-        ORDER BY p.practitioner_id DESC 
-        LIMIT $offset, $limit";
+        WHERE p.practitioner_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $practitioner_id);
+$stmt->execute();
+$result = $stmt->get_result();
 
-$result = $conn->query($sql);
+// Redirect if practitioner not found
+if($result->num_rows == 0) {
+    header("Location: index.php");
+    exit;
+}
 
-// Calculate total pages for pagination
-$total_sql = "SELECT COUNT(*) as total FROM practitioner $where_clause";
-$total_result = $conn->query($total_sql);
-$total_row = $total_result->fetch_assoc();
-$total_pages = ceil($total_row['total'] / $limit);
+$practitioner = $result->fetch_assoc();
+
+// Auto-correct status if registration number exists but status is not Active
+if (!empty($practitioner['registration_number']) && $practitioner['registration_status'] !== 'Active') {
+    // Update status to Active
+    $conn->query("UPDATE practitioner SET registration_status = 'Active' WHERE practitioner_id = $practitioner_id");
+    
+    // Log the correction
+    error_log("Auto-corrected status for practitioner ID {$practitioner_id} with registration number {$practitioner['registration_number']}");
+    
+    // Refresh practitioner data
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $practitioner = $result->fetch_assoc();
+    
+    // Set notification message
+    $message = "Status automatically updated to Active because this practitioner has a registration number.";
+    $alert_type = "info";
+}
+
+// Debug information for profile image
+$debug_profile_image = !empty($practitioner['practitioner_profile_image']) ? $practitioner['practitioner_profile_image'] : 'Not set';
+$debug_profile_path = '../uploads/' . $practitioner['practitioner_profile_image'];
+$debug_profile_exists = file_exists($debug_profile_path) ? 'Yes' : 'No';
+
+
+
+// Fetch education information with college and university details
+$edu_sql = "SELECT e.*, c.college_name, u.university_name
+            FROM education_information e
+            LEFT JOIN college_master c ON e.college_id = c.college_id
+            LEFT JOIN university_master u ON e.university_id = u.university_id
+            WHERE e.practitioner_id = ?";
+$edu_stmt = $conn->prepare($edu_sql);
+$edu_stmt->bind_param("i", $practitioner_id);
+$edu_stmt->execute();
+$edu_result = $edu_stmt->get_result();
+$education = $edu_result->fetch_assoc();
+
+// Fetch address information for both permanent and Residential addresses
+$addr_sql = "SELECT * FROM practitioner_address 
+             WHERE practitioner_id = ? 
+             ORDER BY practitioner_address_type";
+$addr_stmt = $conn->prepare($addr_sql);
+$addr_stmt->bind_param("i", $practitioner_id);
+$addr_stmt->execute();
+$addr_result = $addr_stmt->get_result();
+
+// Organize addresses by type
+$addresses = [];
+while($row = $addr_result->fetch_assoc()) {
+    $addresses[$row['practitioner_address_type']] = $row;
+}
+
+// Handle status update if form is submitted
+if(isset($_POST['update_status'])) {
+    $new_status = $_POST['status'];
+    
+    $update_sql = "UPDATE practitioner SET registration_status = ? WHERE practitioner_id = ?";
+    $update_stmt = $conn->prepare($update_sql);
+    $update_stmt->bind_param("si", $new_status, $practitioner_id);
+    
+    if($update_stmt->execute()) {
+        $message = "Status updated successfully.";
+        $alert_type = "success";
+        
+        // Refresh practitioner data
+        $practitioner['registration_status'] = $new_status;
+        
+        // Send email notification when status is set to Approved
+        if($new_status == 'Approved') {
+            // Send approval email using the function from email-templates.php
+            if(sendApprovalEmail($practitioner['practitioner_email_id'], $practitioner['practitioner_name'], $practitioner_id)) {
+                $message .= " An email notification has been sent to the practitioner.";
+            }
+        }
+    } else {
+        $message = "Error updating status: " . $conn->error;
+        $alert_type = "danger";
+    }
+}
 
 // Set page title
-$pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
+$pageTitle = "View Practitioner Details | Karnataka State Allied & Healthcare Council";
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    
-	    <!-- Title -->
-	<title>W3CRM - Bootstrap Admin Dashboard Template</title>
+	
+	<base href="../">
+
+	<!-- Title -->
+	<title>KSAHC - Practitioner Profile</title>
 	
 	<!-- Meta -->
 	<meta charset="utf-8">
@@ -186,26 +155,29 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 	<meta name="twitter:card" content="summary_large_image">
 	
 	<!-- FAVICONS ICON -->
-	<link rel="shortcut icon" type="image/png" href="../assets/images/favicon.png">
+	<link rel="shortcut icon" type="image/png" href="assets/images/favicon.png">
+	
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 	
 	<!-- MOBILE SPECIFIC -->
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	
 	<!-- Canonical URL -->
-	<link rel="canonical" href="https://w3crm.dexignzone.com/xhtml/task.html">
+	<link rel="canonical" href="https://w3crm.dexignzone.com/xhtml/profile/overview.html">
 	
 	<!-- Plugins Stylesheet -->
-	<link href="../assets/css/jquery.localizationTool.css" rel="stylesheet">
-	<link href="../assets/vendor/bootstrap-select/css/bootstrap-select.min.css" rel="stylesheet">
+	<link href="assets/css/jquery.localizationTool.css" rel="stylesheet">
+	<link href="assets/vendor/bootstrap-select/css/bootstrap-select.min.css" rel="stylesheet">
 	
 	
-	<link href="../assets/vendor/datatables/css/jquery.dataTables.min.css" rel="stylesheet">
-	<link href="../assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">	
-	<link href="../assets/vendor/tagify/tagify.css" rel="stylesheet">
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">	
+	<link href="assets/vendor/tagify/tagify.css" rel="stylesheet">
+	<link href="assets/vendor/lightgallery/css/lightgallery.min.css" rel="stylesheet">
 	
-    <!-- Style CSS -->
-	<link href="../assets/css/plugins.css" rel="stylesheet">
-	<link href="../assets/css/style.css" rel="stylesheet">
+	<!-- Style CSS -->
+	<link href="assets/css/plugins.css" rel="stylesheet">
+	<link href="assets/css/style.css" rel="stylesheet">
 	
 </head>
 <body>
@@ -220,8 +192,8 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 	<!-- End - Preloader -->
 
 	<!-- Start - Main Wrapper -->
-    <div id="main-wrapper">
-        
+    <div id="main-wrapper" class="show">
+       
 			<!--**********************************
 		Nav header start
 	***********************************-->
@@ -300,7 +272,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 								<li class="active dz-chat-user">
 									<div class="d-flex bd-highlight">
 										<div class="img_cont">
-											<img src="../assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img" alt="">
+											<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img" alt="">
 											<span class="online_icon"></span>
 										</div>
 										<div class="user_info">
@@ -312,7 +284,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 								<li class="dz-chat-user">
 									<div class="d-flex bd-highlight">
 										<div class="img_cont">
-											<img src="../assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img" alt="">
+											<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img" alt="">
 											<span class="online_icon offline"></span>
 										</div>
 										<div class="user_info">
@@ -324,7 +296,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 								<li class="dz-chat-user">
 									<div class="d-flex bd-highlight">
 										<div class="img_cont">
-											<img src="../assets/images/avatar/small/avatar3.webp" class="rounded-circle user_img" alt="">
+											<img src="assets/images/avatar/small/avatar3.webp" class="rounded-circle user_img" alt="">
 											<span class="online_icon"></span>
 										</div>
 										<div class="user_info">
@@ -336,7 +308,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 								<li class="dz-chat-user">
 									<div class="d-flex bd-highlight">
 										<div class="img_cont">
-											<img src="../assets/images/avatar/small/avatar4.webp" class="rounded-circle user_img" alt="">
+											<img src="assets/images/avatar/small/avatar4.webp" class="rounded-circle user_img" alt="">
 											<span class="online_icon offline"></span>
 										</div>
 										<div class="user_info">
@@ -349,7 +321,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 								<li class="dz-chat-user">
 									<div class="d-flex bd-highlight">
 										<div class="img_cont">
-											<img src="../assets/images/avatar/small/avatar5.webp" class="rounded-circle user_img" alt="">
+											<img src="assets/images/avatar/small/avatar5.webp" class="rounded-circle user_img" alt="">
 											<span class="online_icon offline"></span>
 										</div>
 										<div class="user_info">
@@ -361,7 +333,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 								<li class="dz- -user">
 									<div class="d-flex bd-highlight">
 										<div class="img_cont">
-											<img src="../assets/images/avatar/small/avatar6.webp" class="rounded-circle user_img" alt="">
+											<img src="assets/images/avatar/small/avatar6.webp" class="rounded-circle user_img" alt="">
 											<span class="online_icon"></span>
 										</div>
 										<div class="user_info">
@@ -373,7 +345,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 								<li class="dz-chat-user">
 									<div class="d-flex bd-highlight">
 										<div class="img_cont">
-											<img src="../assets/images/avatar/small/avatar7.webp" class="rounded-circle user_img" alt="">
+											<img src="assets/images/avatar/small/avatar7.webp" class="rounded-circle user_img" alt="">
 											<span class="online_icon offline"></span>
 										</div>
 										<div class="user_info">
@@ -386,7 +358,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 								<li class="dz-chat-user">
 									<div class="d-flex bd-highlight">
 										<div class="img_cont">
-											<img src="../assets/images/avatar/small/avatar8.webp" class="rounded-circle user_img" alt="">
+											<img src="assets/images/avatar/small/avatar8.webp" class="rounded-circle user_img" alt="">
 											<span class="online_icon"></span>
 										</div>
 										<div class="user_info">
@@ -398,7 +370,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 								<li class="dz-chat-user">
 									<div class="d-flex bd-highlight">
 										<div class="img_cont">
-											<img src="../assets/images/avatar/small/avatar9.webp" class="rounded-circle user_img" alt="">
+											<img src="assets/images/avatar/small/avatar9.webp" class="rounded-circle user_img" alt="">
 											<span class="online_icon offline"></span>
 										</div>
 										<div class="user_info">
@@ -411,7 +383,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 								<li class="dz-chat-user">
 									<div class="d-flex bd-highlight">
 										<div class="img_cont">
-											<img src="../assets/images/avatar/small/avatar10.webp" class="rounded-circle user_img" alt="">
+											<img src="assets/images/avatar/small/avatar10.webp" class="rounded-circle user_img" alt="">
 											<span class="online_icon offline"></span>
 										</div>
 										<div class="user_info">
@@ -423,7 +395,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 								<li class="dz-chat-user">
 									<div class="d-flex bd-highlight">
 										<div class="img_cont">
-											<img src="../assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img" alt="">
+											<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img" alt="">
 											<span class="online_icon"></span>
 										</div>
 										<div class="user_info">
@@ -435,7 +407,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 								<li class="dz-chat-user">
 									<div class="d-flex bd-highlight">
 										<div class="img_cont">
-											<img src="../assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img" alt="">
+											<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img" alt="">
 											<span class="online_icon offline"></span>
 										</div>
 										<div class="user_info">
@@ -447,7 +419,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 								<li class="dz-chat-user">
 									<div class="d-flex bd-highlight">
 										<div class="img_cont">
-											<img src="../assets/images/avatar/small/avatar3.webp" class="rounded-circle user_img" alt="">
+											<img src="assets/images/avatar/small/avatar3.webp" class="rounded-circle user_img" alt="">
 											<span class="online_icon"></span>
 										</div>
 										<div class="user_info">
@@ -460,7 +432,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 								<li class="dz-chat-user">
 									<div class="d-flex bd-highlight">
 										<div class="img_cont">
-											<img src="../assets/images/avatar/small/avatar4.webp" class="rounded-circle user_img" alt="">
+											<img src="assets/images/avatar/small/avatar4.webp" class="rounded-circle user_img" alt="">
 											<span class="online_icon offline"></span>
 										</div>
 										<div class="user_info">
@@ -472,7 +444,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 								<li class="dz-chat-user">
 									<div class="d-flex bd-highlight">
 										<div class="img_cont">
-											<img src="../assets/images/avatar/small/avatar5.webp" class="rounded-circle user_img" alt="">
+											<img src="assets/images/avatar/small/avatar5.webp" class="rounded-circle user_img" alt="">
 											<span class="online_icon offline"></span>
 										</div>
 										<div class="user_info">
@@ -521,7 +493,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 						<div class="card-body msg_card_body dz-scroll" id="DZ_W_Contacts_Body3">
 							<div class="d-flex justify-content-start mb-4">
 								<div class="img_cont_msg">
-									<img src="../images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
 								</div>
 								<div class="msg_cotainer">
 									Hi, how are you samim?
@@ -534,12 +506,12 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 									<span class="msg_time_send">8:55 AM, Today</span>
 								</div>
 								<div class="img_cont_msg">
-									<img src="../assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
+									<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
 								</div>
 							</div>
 							<div class="d-flex justify-content-start mb-4">
 								<div class="img_cont_msg">
-									<img src="../assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
 								</div>
 								<div class="msg_cotainer">
 									I am good too, thank you for your chat template
@@ -552,12 +524,12 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 									<span class="msg_time_send">9:05 AM, Today</span>
 								</div>
 								<div class="img_cont_msg">
-									<img src="../assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
+									<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
 								</div>
 							</div>
 							<div class="d-flex justify-content-start mb-4">
 								<div class="img_cont_msg">
-									<img src="../assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
 								</div>
 								<div class="msg_cotainer">
 									I am looking for your next templates
@@ -570,12 +542,12 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 									<span class="msg_time_send">9:10 AM, Today</span>
 								</div>
 								<div class="img_cont_msg">
-									<img src="../assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
+									<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
 								</div>
 							</div>
 							<div class="d-flex justify-content-start mb-4">
 								<div class="img_cont_msg">
-									<img src="../assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
 								</div>
 								<div class="msg_cotainer">
 									Bye, see you
@@ -584,7 +556,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 							</div>
 							<div class="d-flex justify-content-start mb-4">
 								<div class="img_cont_msg">
-									<img src="../assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
 								</div>
 								<div class="msg_cotainer">
 									Hi, how are you samim?
@@ -597,12 +569,12 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 									<span class="msg_time_send">8:55 AM, Today</span>
 								</div>
 								<div class="img_cont_msg">
-									<img src="../assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
+									<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
 								</div>
 							</div>
 							<div class="d-flex justify-content-start mb-4">
 								<div class="img_cont_msg">
-									<img src="../assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
 								</div>
 								<div class="msg_cotainer">
 									I am good too, thank you for your chat template
@@ -615,12 +587,12 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 									<span class="msg_time_send">9:05 AM, Today</span>
 								</div>
 								<div class="img_cont_msg">
-									<img src="../assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
+									<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
 								</div>
 							</div>
 							<div class="d-flex justify-content-start mb-4">
 								<div class="img_cont_msg">
-									<img src="../../assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
 								</div>
 								<div class="msg_cotainer">
 									I am looking for your next templates
@@ -633,12 +605,12 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 									<span class="msg_time_send">9:10 AM, Today</span>
 								</div>
 								<div class="img_cont_msg">
-									<img src="../assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
+									<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
 								</div>
 							</div>
 							<div class="d-flex justify-content-start mb-4">
 								<div class="img_cont_msg">
-									<img src="../assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
 								</div>
 								<div class="msg_cotainer">
 									Bye, see you
@@ -849,7 +821,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 									<div class="dz-scroll p-2" style="height: 380px;">
 										<div class="d-flex align-items-center p-2 bg-action-light rounded">
 											<div class="d-inline-block">
-												<img src="../../assets/images/avatar/small/avatar1.webp" alt="" class="rounded-circle avatar avatar-sm">
+												<img src="assets/images/avatar/small/avatar1.webp" alt="" class="rounded-circle avatar avatar-sm">
 											</div>
 											<div class="clearfix ms-2">
 												<h6 class="fs-13 mb-0 fw-semibold">Dr sultads Send you Photo</h6>
@@ -876,7 +848,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 										</div>
 										<div class="d-flex align-items-center p-2 bg-action-light rounded">
 											<div class="d-inline-block">
-												<img src="../assets/images/avatar/small/avatar2.webp" alt="" class="rounded-circle avatar avatar-sm">
+												<img src="assets/images/avatar/small/avatar2.webp" alt="" class="rounded-circle avatar avatar-sm">
 											</div>
 											<div class="clearfix ms-2">
 												<h6 class="fs-13 mb-0 fw-semibold">Resport created successfully</h6>
@@ -885,7 +857,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 										</div>
 										<div class="d-flex align-items-center p-2 bg-action-light rounded">
 											<div class="d-inline-block">
-												<img src="../assets/images/avatar/small/avatar3.webp" alt="" class="rounded-circle avatar avatar-sm">
+												<img src="assets/images/avatar/small/avatar3.webp" alt="" class="rounded-circle avatar avatar-sm">
 											</div>
 											<div class="clearfix ms-2">
 												<h6 class="fs-13 mb-0 fw-semibold">Dr sultads Send you Photo</h6>
@@ -912,7 +884,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 										</div>
 										<div class="d-flex align-items-center p-2 bg-action-light rounded">
 											<div class="d-inline-block">
-												<img src="../assets/images/avatar/small/avatar4.webp" alt="" class="rounded-circle avatar avatar-sm">
+												<img src="assets/images/avatar/small/avatar4.webp" alt="" class="rounded-circle avatar avatar-sm">
 											</div>
 											<div class="clearfix ms-2">
 												<h6 class="fs-13 mb-0 fw-semibold">Resport created successfully</h6>
@@ -946,7 +918,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 							<a class="nav-link" href="javascript:void(0);" role="button" data-bs-toggle="dropdown" aria-expanded="false">
 								<div class="profile-head">
 									<div class="profile-media">
-										<img src="../assets/images/tab/1.jpg" alt="">
+										<img src="assets/images/tab/1.jpg" alt="">
 									</div>
 									<div class="header-info">
 										<h6 class="author-name">Thomas Fleming</h6>
@@ -957,7 +929,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 							<ul class="dropdown-menu dropdown-menu-end">
 								<li>
 									<div class="py-2 d-flex px-3">
-										<img src="../assets/images/tab/1.jpg" class="avatar avatar-sm rounded-circle" alt="">
+										<img src="assets/images/tab/1.jpg" class="avatar avatar-sm rounded-circle" alt="">
 										<div class="ms-2">
 											<h6 class="mb-0">Thomas Fleming</h6>
 											<small>Web Designer</small>
@@ -1362,12 +1334,12 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 		
 		<!-- Start - Content Body -->
         <main class="content-body">
-            
+			
 			<!-- Start - Page Title & Breadcrumb -->
 			<div class="page-title">
 					<nav aria-label="breadcrumb">
 		<ol class="breadcrumb">
-			<li><h1>Task</h1></li>
+			<li><h1>Overview</h1></li>
 			<li class="breadcrumb-item">
 				<a href="index.html">
 					<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1377,486 +1349,882 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 					Home
 				</a>
 			</li>
-			<li class="breadcrumb-item active" aria-current="page">Task</li>
+			<li class="breadcrumb-item active" aria-current="page">Overview</li>
 		</ol>
 	</nav>
 				<a class="text-primary fs-13" data-bs-toggle="offcanvas" href="#addTaskmodal" role="button" aria-controls="addTaskmodal">+ Add Task</a>
 			</div>
 			<!-- End - Page Title & Breadcrumb -->
 			
-			<?php
-// Assume $conn is already defined and connected to the database
-$status_filter = isset($_GET['status']) ? strtolower($_GET['status']) : 'pending';
-$valid_statuses = ['pending', 'approved', 'active', 'inactive'];
+			<div class="card border-top-0 border-start-0 border-end-0 rounded-0 h-auto mb-0 px-md-2 pt-md-2">
+				<div class="card-body d-flex py-md-4">
+					<div class="clearfix">
+						<!-- Profile Image -->
+						<div class="d-inline-block position-relative me-sm-4 me-3 mb-3 mb-lg-0">
+							<?php if(!empty($practitioner['practitioner_profile_image'])): ?>
+								<img src="uploads/<?php echo $practitioner['practitioner_profile_image']; ?>" alt="Profile Image" class="profile-img">
+							<?php else: ?>
+								<img src="assets/images/avatar/large/avatar5.webp" alt="Default Profile" class="profile-img">
+							<?php endif; ?>
+							
+							<?php if($practitioner['registration_status'] == 'Active'): ?>
+								<span class="fa fa-circle text-success position-absolute bottom-0 end-0 rounded-circle"
+									  style="border: 2px solid #fff; padding: 5px; background: #fff;"></span>
+							<?php endif; ?>
+						</div>
+					</div>
+					<div class="clearfix d-xl-flex flex-grow-1">
+						<div class="clearfix pe-md-5">
+							<h3 class="fw-semibold mb-1"><?php echo htmlspecialchars($practitioner['practitioner_name']); ?></h3>
+							<ul class="d-flex flex-wrap align-items-center list-unstyled mb-3">
+								<li class="me-3 d-inline-flex align-items-center">
+									<i class="fas fa-id-card me-1"></i> ID: <?php echo $practitioner['practitioner_id']; ?>
+								</li>
+								<li class="me-3 d-inline-flex align-items-center">
+									<i class="fas fa-calendar me-1"></i> <?php echo date('d M Y', strtotime($practitioner['registration_date'])); ?>
+								</li>
+								<li class="me-3 d-inline-flex align-items-center">
+									<i class="fas fa-user-md me-1"></i> <?php echo htmlspecialchars($practitioner['registration_type']); ?>
+								</li>
+							</ul>
+							<div class="d-md-flex d-none flex-wrap">
+								<div class="border outline-dashed rounded p-2 d-flex align-items-center me-3 mt-3">
+									<div class="avatar avatar-sm avatar-primary">
+										<i class="fas fa-phone"></i>
+									</div>
+									<div class="clearfix ms-2">
+										<h3 class="mb-0 fw-semibold lh-1"><?php echo htmlspecialchars($practitioner['practitioner_mobile_number']); ?></h3>
+										<span class="small">Contact Number</span>
+									</div>
+								</div>
+								<div class="border outline-dashed rounded p-2 d-flex align-items-center me-3 mt-3">
+									<div class="avatar avatar-sm avatar-primary">
+										<i class="fas fa-envelope"></i>
+									</div>
+									<div class="clearfix ms-2">
+										<h3 class="mb-0 fw-semibold lh-1"><?php echo htmlspecialchars($practitioner['practitioner_email_id']); ?></h3>
+										<span class="small">Email Address</span>
+									</div>
+								</div>
+								<?php if(!empty($practitioner['registration_number'])): ?>
+								<div class="border outline-dashed rounded p-2 d-flex align-items-center me-3 mt-3">
+									<div class="avatar avatar-sm avatar-success">
+										<i class="fas fa-check-circle"></i>
+									</div>
+									<div class="clearfix ms-2">
+										<h3 class="mb-0 fw-semibold lh-1"><?php echo htmlspecialchars($practitioner['registration_number']); ?></h3>
+										<span class="small">Registration Number</span>
+									</div>
+								</div>
+								<?php endif; ?>
+							</div>
+						</div>
+						<div class="clearfix mt-3 mt-xl-0 ms-auto d-flex flex-column col-xl-3">
+							<!-- Status Update and Actions Section -->
+							<div class="d-flex flex-column align-items-end gap-2 mb-3">
+								<?php if($practitioner['registration_status'] != 'Active' && empty($practitioner['registration_number'])): ?>
+									<div class="d-flex gap-2 align-items-center">
+										<form method="POST" class="d-flex gap-2">
+											<select name="status" class="form-select form-select-sm" style="min-width: 140px;">
+												<?php if($practitioner['registration_status'] == 'Pending'): ?>
+													<option value="Approved">Approve</option>
+													<option value="Inactive">Reject</option>
+												<?php elseif($practitioner['registration_status'] == 'Approved'): ?>
+													<option value="Inactive">Reject</option>
+												<?php else: ?>
+													<option value="Pending">Set Pending</option>
+													<option value="Approved">Approve</option>
+												<?php endif; ?>
+											</select>
+											<button type="submit" name="update_status" class="btn btn-primary btn-sm px-3">
+												<i class="fas fa-check me-1"></i> Update
+											</button>
+										</form>
+									</div>
+								<?php endif; ?>
+								<button class="btn btn-warning btn-sm px-4" id="openRemarkModal">
+									<i class="fas fa-envelope me-1"></i> Send Remark
+								</button>
+							</div>
 
-// Validate status_filter
-if (!in_array($status_filter, $valid_statuses)) {
-    $status_filter = 'pending';
-}
+							<!-- Status Badge -->
+							<div class="mt-auto">
+								<div class="status-badge-container">
+									<span class="status-badge status-badge-<?php 
+										echo $practitioner['registration_status'] == 'Active' ? 'info' : 
+											($practitioner['registration_status'] == 'Approved' ? 'success' : 
+											($practitioner['registration_status'] == 'Inactive' ? 'danger' : 'warning')); 
+										?>">
+										<i class="fas fa-circle me-1"></i>
+										<?php echo $practitioner['registration_status']; ?>
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="card-footer py-0 d-flex flex-wrap justify-content-between align-items-center mx-sm-4 px-0">
+					<ul class="nav nav-tabs gap-3 nav-scroll nav-scroll-auto-xl px-3 px-sm-0" id="myTab" role="tablist">
+						<li class="nav-item" role="presentation">
+							<button class="nav-link py-3 px-1 border-3 active" data-bs-toggle="tab" data-bs-target="#personal" type="button">Personal Info</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link py-3 px-1 border-3" data-bs-toggle="tab" data-bs-target="#education" type="button">Education</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link py-3 px-1 border-3" data-bs-toggle="tab" data-bs-target="#address" type="button">Address</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link py-3 px-1 border-3" data-bs-toggle="tab" data-bs-target="#documents" type="button">Documents</button>
+						</li>
+					</ul>
+				</div>
+			</div>
+			
+			<div class="container-fluid">
+				<div class="tab-content" id="myTabContent">
+					<!-- Personal Information Tab -->
+					<div class="tab-pane fade show active" id="personal">
+						<div class="row">
+							<div class="col-xl-6">
+								<div class="info-card">
+									<div class="card-header d-flex align-items-center">
+										<i class="fas fa-user me-2"></i>
+										<h4 class="card-title mb-0">Personal Information</h4>
+									</div>
+									<div class="card-body p-0">
+										<div class="info-item">
+											<div class="row">
+												<div class="col-md-5 info-label">Full Name</div>
+												<div class="col-md-7"><?php echo htmlspecialchars($practitioner['practitioner_name']); ?></div>
+											</div>
+										</div>
+										<div class="info-item">
+											<div class="row">
+												<div class="col-md-5 info-label">Father Name</div>
+												<div class="col-md-7"><?php echo !empty($practitioner['practitioner_spouse_name']) ? htmlspecialchars($practitioner['practitioner_spouse_name']) : '<span class="text-muted">Not Provided</span>'; ?></div>
+											</div>
+										</div>
+										<div class="info-item">
+											<div class="row">
+												<div class="col-md-5 info-label">Date of Birth</div>
+												<div class="col-md-7"><?php echo date('d M Y', strtotime($practitioner['practitioner_birth_date'])); ?></div>
+											</div>
+										</div>
+										<div class="info-item">
+											<div class="row">
+												<div class="col-md-5 info-label">Gender</div>
+												<div class="col-md-7"><?php echo htmlspecialchars($practitioner['practitioner_gender']); ?></div>
+											</div>
+										</div>
+										<div class="info-item">
+											<div class="row">
+												<div class="col-md-5 info-label">Nationality</div>
+												<div class="col-md-7"><?php echo htmlspecialchars($practitioner['practitioner_nationality']); ?></div>
+											</div>
+										</div>
+										<div class="info-item">
+											<div class="row">
+												<div class="col-md-5 info-label">Aadhar Number</div>
+												<div class="col-md-7"><?php echo !empty($practitioner['practitioner_aadhar_number']) ? htmlspecialchars($practitioner['practitioner_aadhar_number']) : '<span class="text-muted">Not Provided</span>'; ?></div>
+											</div>
+										</div>
+									</div>
+								</div>
 
-// Fetch counts for all statuses
-$counts = [
-    'pending' => 0,
-    'approved' => 0,
-    'active' => 0,
-    'inactive' => 0
-];
+								<!-- Contact Information Card -->
+								<div class="info-card">
+									<div class="card-header d-flex align-items-center">
+										<i class="fas fa-address-book me-2"></i>
+										<h4 class="card-title mb-0">Contact Information</h4>
+									</div>
+									<div class="card-body p-0">
+										<div class="info-item">
+											<div class="row">
+												<div class="col-md-5 info-label">Mobile Number</div>
+												<div class="col-md-7"><?php echo htmlspecialchars($practitioner['practitioner_mobile_number']); ?></div>
+											</div>
+										</div>
+										<div class="info-item">
+											<div class="row">
+												<div class="col-md-5 info-label">Email</div>
+												<div class="col-md-7"><?php echo htmlspecialchars($practitioner['practitioner_email_id']); ?></div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
 
-foreach ($valid_statuses as $status) {
-    $count_sql = "SELECT COUNT(*) as count FROM practitioner WHERE registration_status = '" . ucfirst($status) . "'";
-    $count_result = $conn->query($count_sql);
-    $counts[$status] = $count_result && $count_result->num_rows > 0 ? $count_result->fetch_assoc()['count'] : 0;
-}
+							<div class="col-xl-6">
+								<!-- Registration Information Card -->
+								<div class="info-card">
+									<div class="card-header d-flex align-items-center">
+										<i class="fas fa-clipboard-check me-2"></i>
+										<h4 class="card-title mb-0">Registration Information</h4>
+									</div>
+									<div class="card-body p-0">
+										<div class="info-item">
+											<div class="row">
+												<div class="col-md-5 info-label">Registration ID</div>
+												<div class="col-md-7"><?php echo $practitioner['practitioner_id']; ?></div>
+											</div>
+										</div>
+										<div class="info-item">
+											<div class="row">
+												<div class="col-md-5 info-label">Registration Type</div>
+												<div class="col-md-7"><?php echo htmlspecialchars($practitioner['registration_type']); ?></div>
+											</div>
+										</div>
+										<div class="info-item">
+											<div class="row">
+												<div class="col-md-5 info-label">Registration Date</div>
+												<div class="col-md-7"><?php echo date('d M Y', strtotime($practitioner['registration_date'])); ?></div>
+											</div>
+										</div>
+										<?php if(!empty($practitioner['registration_number'])): ?>
+										<div class="info-item">
+											<div class="row">
+												<div class="col-md-5 info-label">Registration Number</div>
+												<div class="col-md-7"><?php echo htmlspecialchars($practitioner['registration_number']); ?></div>
+											</div>
+										</div>
+										<?php endif; ?>
+										<div class="info-item">
+											<div class="row">
+												<div class="col-md-5 info-label">Status</div>
+												<div class="col-md-7">
+													<span class="badge <?php 
+														echo $practitioner['registration_status'] == 'Active' ? 'badge-info' : 
+															($practitioner['registration_status'] == 'Approved' ? 'badge-success' : 
+															($practitioner['registration_status'] == 'Inactive' ? 'badge-danger' : 'badge-warning')); 
+													?>">
+														<?php echo $practitioner['registration_status']; ?>
+													</span>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
 
-// Fetch data for the selected status
-$sql = "SELECT p.*, rt.registration_type 
-        FROM practitioner p
-        LEFT JOIN registration_type_master rt ON p.registration_type_id = rt.registration_type_id
-        WHERE p.registration_status = '" . ucfirst($status_filter) . "'
-        ORDER BY p.practitioner_id DESC";
-$result = $conn->query($sql);
-?>
-
-<div class="container-fluid">
-    
-    
-    <div class="row">
-        <div class="col-xl-12">
-            <div class="card">
-                <div class="card-body overflow-hidden">
-                    <div class="row gx-5 gy-3">
-					<div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mt-4 mb-4">Applied Practitioner List For Approval</h1>
-    </div>
-                        <div class="col-xl-3 col-sm-6 col-6">
-                            <a href="?status=pending" class="text-decoration-none">
-                                <div class="d-flex align-items-center <?php echo $status_filter == 'pending' ? 'bg-light p-3 rounded' : ''; ?>">
-                                    <h2 class="text-warning my-0 fs-3 me-2"><?php echo $counts['pending']; ?></h2>
-                                    <span class="text-secondary fw-medium fs-5">Pending</span>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-xl-3 col-sm-6 col-6">
-                            <a href="?status=approved" class="text-decoration-none">
-                                <div class="d-flex align-items-center <?php echo $status_filter == 'approved' ? 'bg-light p-3 rounded' : ''; ?>">
-                                    <h2 class="text-success my-0 fs-3 me-2"><?php echo $counts['approved']; ?></h2>
-                                    <span class="text-secondary fw-medium fs-5">Approved</span>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-xl-3 col-sm-6 col-6">
-                            <a href="?status=active" class="text-decoration-none">
-                                <div class="d-flex align-items-center <?php echo $status_filter == 'active' ? 'bg-light p-3 rounded' : ''; ?>">
-                                    <h2 class="text-primary my-0 fs-3 me-2"><?php echo $counts['active']; ?></h2>
-                                    <span class="text-secondary fw-medium fs-5">Active</span>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-xl-3 col-sm-6 col-6">
-                            <a href="?status=inactive" class="text-decoration-none">
-                                <div class="d-flex align-items-center <?php echo $status_filter == 'inactive' ? 'bg-light p-3 rounded' : ''; ?>">
-                                    <h2 class="text-danger my-0 fs-3 me-2"><?php echo $counts['inactive']; ?></h2>
-                                    <span class="text-secondary fw-medium fs-5">Inactive</span>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-xl-12">
-            <div class="card">
-                <div class="card-header border-0">
-                    <h4 class="card-title"><?php echo ucfirst($status_filter); ?> Practitioners</h4>
-                    <div class="d-flex">
-                        <form method="post" id="bulkActionForm" class="me-2">
-                            <input type="hidden" name="bulk_action" id="bulkAction">
-                            <input type="hidden" name="selected_practitioners" id="selectedPractitioners">
-                            <button type="button" class="btn btn-success me-2" onclick="submitBulkAction('approve')">
-                                <i class="fas fa-check-circle"></i> Approve Selected
-                            </button>
-                            <button type="button" class="btn btn-danger" onclick="submitBulkAction('reject')">
-                                <i class="fas fa-times-circle"></i> Reject Selected
-                            </button>
-                        </form>
-                        <div id="tableEmpoloyeesTBL1ExcelBTN"></div>
-                    </div>
-                </div>
-                <div class="card-body table-card-body px-0 pt-0 pb-1">
-                    <div class="table-responsive check-wrapper">
-                        <table id="taskTable" class="table">
-                            <thead class="table-light text-nowrap">
-                                <tr>
-                                    <th class="mw-50 sorting-disabled">
-                                        <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="checkAll">
+								<!-- Documents Card -->
+								<div class="info-card" >
+									<div class="card-header d-flex align-items-center">
+										<i class="fas fa-file-alt me-2"></i>
+										<h4 class="card-title mb-0">Documents</h4>
+									</div>
+									<div class="card-body p-0" >
+										<div class="info-item">
+											<div class="row">
+												<div class="col-md-5 info-label">Signature</div>
+                                                <div class="col-md-7">
+                                            <?php if(!empty($practitioner['practitioner_signature'])): ?>
+                                                <img src="uploads/<?php echo $practitioner['practitioner_signature']; ?>" alt="Signature" class="signature-img">
+                                            <?php else: ?>
+                                                <span class="text-muted">Not Uploaded</span>
+                                            <?php endif; ?>
                                         </div>
-                                    </th>
-                                    <th class="mw-50">ID</th>
-                                    <th class="mw-200">Name</th>
-                                    <th class="mw-100">Registration Type</th>
-                                    <th class="mw-100">Contact Rubber Stamp</th>
-                                    <th class="mw-100">Registration Date</th>
-                                    <th class="mw-120">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-nowrap">
-                                <?php if ($result && $result->num_rows > 0): ?>
-                                    <?php while ($row = $result->fetch_assoc()): ?>
-                                        <tr>
-                                            <td>
-                                                <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input practitioner-checkbox" value="<?php echo $row['practitioner_id']; ?>">
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="clearfix">
-                                                    <h6 class="mb-1"><?php echo $row['practitioner_id']; ?></h6>
-                                                </div>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($row['practitioner_name']); ?></td>
-                                            <td><?php echo htmlspecialchars($row['registration_type']); ?></td>
-                                            <td>
-                                                <div><i class="fas fa-envelope text-muted mr-1"></i> <?php echo htmlspecialchars($row['practitioner_email_id']); ?></div>
-                                                <div><i class="fas fa-phone text-muted mr-1"></i> <?php echo htmlspecialchars($row['practitioner_mobile_number']); ?></div>
-                                            </td>
-                                            <td><?php echo date('d M Y', strtotime($row['registration_date'])); ?></td>
-                                            <td>
-                                                <div class="btn-group">
-                                                    <a href="landing_profile.php?id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-info" title="View Details">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    <?php if ($status_filter == 'pending' || $status_filter == 'approved'): ?>
-                                                        <a href="?action=approve&id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-success" title="Approve" onclick="return confirm('Are you sure you want to approve this practitioner?');">
-                                                            <i class="fas fa-check"></i>
-                                                        </a>
-                                                        <a href="?action=reject&id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-danger" title="Reject" onclick="return confirm('Are you sure you want to reject this practitioner?');">
-                                                            <i class="fas fa-times"></i>
-                                                        </a>
-                                                    <?php endif; ?>
-                                                    <button class="btn btn-sm btn-warning send-remark-btn" title="Send Remark" 
-                                                            data-email="<?php echo htmlspecialchars($row['practitioner_email_id']); ?>" 
-                                                            data-name="<?php echo htmlspecialchars($row['practitioner_name']); ?>" 
-                                                            data-id="<?php echo $row['practitioner_id']; ?>">
-                                                        <i class="fas fa-comment"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endwhile; ?>
-                                <?php else: ?>
-                                    <tr>
-                                        <td colspan="7" class="text-center">No <?php echo $status_filter; ?> applications found</td>
-                                    </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-</main>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Education Tab -->
+					<div class="tab-pane fade" id="education">
+						<div class="row">
+							<div class="col-xl-12">
+								<div class="info-card">
+									<div class="card-header d-flex align-items-center">
+										<i class="fas fa-graduation-cap me-2"></i>
+										<h4 class="card-title mb-0">Education Details</h4>
+									</div>
+									<div class="card-body p-0">
+										<?php if($education): ?>
+											<div class="info-item">
+												<div class="row">
+													<div class="col-md-3 info-label">Education Name</div>
+													<div class="col-md-9"><?php echo htmlspecialchars($education['education_name']); ?></div>
+												</div>
+											</div>
+											<div class="info-item">
+												<div class="row">
+													<div class="col-md-3 info-label">Year of Passing</div>
+													<div class="col-md-9"><?php echo htmlspecialchars($education['education_year_of_passing']); ?></div>
+												</div>
+											</div>
+											<div class="info-item">
+												<div class="row">
+													<div class="col-md-3 info-label">Month of Passing</div>
+													<div class="col-md-9"><?php echo htmlspecialchars($education['education_month_of_passing']); ?></div>
+												</div>
+											</div>
+											<div class="info-item">
+												<div class="row">
+													<div class="col-md-3 info-label">College</div>
+													<div class="col-md-9"><?php echo htmlspecialchars($education['college_name']); ?></div>
+												</div>
+											</div>
+											<div class="info-item">
+												<div class="row">
+													<div class="col-md-3 info-label">University</div>
+													<div class="col-md-9"><?php echo htmlspecialchars($education['university_name']); ?></div>
+												</div>
+											</div>
+										<?php else: ?>
+											<div class="info-item">
+												<p class="text-muted mb-0 text-center">No education information provided.</p>
+											</div>
+										<?php endif; ?>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Address Tab -->
+					<div class="tab-pane fade" id="address">
+						<div class="row">
+							<?php if(isset($addresses['Permanent'])): ?>
+							<div class="col-xl-6">
+								<div class="info-card">
+									<div class="card-header d-flex align-items-center">
+										<i class="fas fa-home me-2"></i>
+										<h4 class="card-title mb-0">Permanent Address</h4>
+									</div>
+									<div class="card-body p-0">
+										<div class="info-item">
+											<div class="row mb-2">
+												<div class="col-md-4 info-label">Address Line 1</div>
+												<div class="col-md-8"><?php echo htmlspecialchars($addresses['Permanent']['practitioner_address_line1']); ?></div>
+											</div>
+											<?php if(!empty($addresses['Permanent']['practitioner_address_line2'])): ?>
+											<div class="row mb-2">
+												<div class="col-md-4 info-label">Address Line 2</div>
+												<div class="col-md-8"><?php echo htmlspecialchars($addresses['Permanent']['practitioner_address_line2']); ?></div>
+											</div>
+											<?php endif; ?>
+											<div class="row mb-2">
+												<div class="col-md-4 info-label">City</div>
+												<div class="col-md-8"><?php echo htmlspecialchars($addresses['Permanent']['practitioner_address_city']); ?></div>
+											</div>
+											<!-- <div class="row mb-2">
+												<div class="col-md-4 info-label">State</div>
+												<div class="col-md-8"><?php echo htmlspecialchars($addresses['Permanent']['practitioner_address_state']); ?></div>
+											</div> -->
+											<div class="row mb-2">
+												<div class="col-md-4 info-label">Pin Code</div>
+												<div class="col-md-8"><?php echo htmlspecialchars($addresses['Permanent']['practitioner_address_pincode']); ?></div>
+											</div>
+											<div class="row">
+												<div class="col-md-4 info-label">Phone Number</div>
+												<div class="col-md-8">
+													<i class="fas fa-phone me-2"></i>
+													<?php echo htmlspecialchars($addresses['Permanent']['practitioner_address_phoneno']); ?>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<?php endif; ?>
+
+							<?php if(isset($addresses['Residential'])): ?>
+							<div class="col-xl-6">
+								<div class="info-card">
+									<div class="card-header d-flex align-items-center">
+										<i class="fas fa-building me-2"></i>
+										<h4 class="card-title mb-0">Residential Address</h4>
+									</div>
+									<div class="card-body p-0">
+										<div class="info-item">
+											<div class="row mb-2">
+												<div class="col-md-4 info-label">Address Line 1</div>
+												<div class="col-md-8"><?php echo htmlspecialchars($addresses['Residential']['practitioner_address_line1']); ?></div>
+											</div>
+											<?php if(!empty($addresses['Residential']['practitioner_address_line2'])): ?>
+											<div class="row mb-2">
+												<div class="col-md-4 info-label">Address Line 2</div>
+												<div class="col-md-8"><?php echo htmlspecialchars($addresses['Residential']['practitioner_address_line2']); ?></div>
+											</div>
+											<?php endif; ?>
+											<div class="row mb-2">
+												<div class="col-md-4 info-label">City</div>
+												<div class="col-md-8"><?php echo htmlspecialchars($addresses['Residential']['practitioner_address_city']); ?></div>
+											</div>
+											
+											<div class="row mb-2">
+												<div class="col-md-4 info-label">Pin Code</div>
+												<div class="col-md-8"><?php echo htmlspecialchars($addresses['Residential']['practitioner_address_pincode']); ?></div>
+											</div>
+											<div class="row">
+												<div class="col-md-4 info-label">Phone Number</div>
+												<div class="col-md-8">
+													<i class="fas fa-phone me-2"></i>
+													<?php echo htmlspecialchars($addresses['Residential']['practitioner_address_phoneno']); ?>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<?php endif; ?>
+							
+							<?php if(!isset($addresses['Permanent']) && !isset($addresses['Residential'])): ?>
+							<div class="col-12">
+								<div class="alert alert-info">
+									<i class="fas fa-info-circle me-2"></i>
+									No address information available.
+								</div>
+							</div>
+							<?php endif; ?>
+						</div>
+					</div>
+
+					<!-- Documents Tab -->
+					<div class="tab-pane fade" id="documents">
+						<div class="row">
+							<div class="col-xl-12">
+								<div class="info-card">
+									<div class="card-header d-flex align-items-center">
+										<i class="fas fa-file-alt me-2"></i>
+										<h4 class="card-title mb-0">Uploaded Documents</h4>
+									</div>
+									<div class="card-body p-0">
+										
+
+										
+
+										<!-- Signature -->
+										<div class="info-item">
+											<div class="row align-items-center">
+												<div class="col-md-3 info-label">Signature</div>
+												<div class="col-md-7">
+													<?php if(!empty($practitioner['practitioner_signature'])): ?>
+														<img src="uploads/<?php echo $practitioner['practitioner_signature']; ?>" 
+															 alt="Signature" class="signature-img">
+													<?php else: ?>
+														<span class="text-muted">Not Uploaded</span>
+													<?php endif; ?>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Additional styles -->
+			<style>
+				.info-card {
+					background: #fff;
+					border-radius: 8px;
+					box-shadow: 0 0 15px rgba(0,0,0,0.1);
+					margin-bottom: 20px;
+					transition: all 0.3s ease;
+				}
+
+				.info-card:hover {
+					transform: translateY(-5px);
+				}
+
+				.info-card .card-header {
+					background: #f8f9fa;
+					padding: 15px 20px;
+					border-bottom: 1px solid rgba(0,0,0,0.1);
+				}
+
+				.info-card .card-header i {
+					font-size: 1.2rem;
+					color: var(--bs-primary);
+				}
+
+				.info-item {
+					padding: 15px 20px;
+					border-bottom: 1px solid rgba(0,0,0,0.05);
+				}
+
+				.info-item:last-child {
+					border-bottom: none;
+				}
+
+				.info-label {
+					color: #6c757d;
+					font-weight: 500;
+				}
+
+				.badge {
+					padding: 8px 12px;
+					font-weight: 500;
+				}
+
+				.signature-img {
+					max-width: 200px;
+					max-height: 80px;
+					border: 1px solid #ddd;
+					padding: 10px;
+					border-radius: 4px;
+					background: #fff;
+					display: block;
+				}
+
+				.profile-img {
+					width: 120px !important;
+					height: 120px !important;
+					border-radius: 50% !important;
+					object-fit: cover !important;
+					border: 4px solid #fff !important;
+					box-shadow: 0 0 10px rgba(0,0,0,0.1) !important;
+				}
+
+				.nav-tabs .nav-link {
+					color: #6c757d;
+					font-weight: 500;
+					padding: 1rem 1.5rem;
+					border: none;
+					border-bottom: 3px solid transparent;
+				}
+
+				.nav-tabs .nav-link.active {
+					color: var(--bs-primary);
+					border-bottom-color: var(--bs-primary);
+					background: transparent;
+				}
+
+				.tab-content {
+					padding: 2rem 0;
+				}
+                
+
+				.badge-success { background-color: #1cc88a; color: white; }
+				.badge-warning { background-color: #f6c23e; color: white; }
+				.badge-danger { background-color: #e74a3b; color: white; }
+				.badge-info { background-color: #36b9cc; color: white; }
+
+				.status-badge-container {
+					display: flex;
+					justify-content: flex-end;
+					padding: 0.5rem;
+				}
+
+				.status-badge {
+					padding: 0.75rem 1.5rem;
+					border-radius: 50px;
+					font-weight: 500;
+					font-size: 0.95rem;
+					display: inline-flex;
+					align-items: center;
+					box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+					transition: all 0.3s ease;
+				}
+
+				.status-badge i {
+					font-size: 0.7rem;
+				}
+
+				.status-badge:hover {
+					transform: translateY(-1px);
+					box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+				}
+
+				.status-badge-success {
+					background-color: #1cc88a;
+					color: white;
+					border: 1px solid #19b57d;
+				}
+
+				.status-badge-warning {
+					background-color: #f6c23e;
+					color: white;
+					border: 1px solid #f4b619;
+				}
+
+				.status-badge-danger {
+					background-color: #e74a3b;
+					color: white;
+					border: 1px solid #e52d1a;
+				}
+
+				.status-badge-info {
+					background-color: #36b9cc;
+					color: white;
+					border: 1px solid #2ea5b6;
+				}
+
+				.form-select {
+					border-radius: 6px;
+					border: 1px solid #e0e0e0;
+					padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+					background-color: #f8f9fa;
+					transition: all 0.2s ease;
+				}
+
+				.form-select:focus {
+					border-color: #80bdff;
+					box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+				}
+
+				.btn {
+					border-radius: 6px;
+					font-weight: 500;
+					display: inline-flex;
+					align-items: center;
+					justify-content: center;
+					transition: all 0.3s ease;
+				}
+
+				.btn:hover {
+					transform: translateY(-1px);
+					box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+				}
+
+				.btn-primary {
+					background-color: #4e73df;
+					border-color: #4e73df;
+				}
+
+				.btn-warning {
+					background-color: #f6c23e;
+					border-color: #f6c23e;
+					color: #fff;
+				}
+
+				.btn-primary:hover {
+					background-color: #2e59d9;
+					border-color: #2653d4;
+				}
+
+				.btn-warning:hover {
+					background-color: #f4b619;
+					border-color: #f4b619;
+					color: #fff;
+				}
+
+				.gap-2 {
+					gap: 0.5rem;
+				}
+
+				.d-flex {
+					display: flex;
+				}
+
+				.flex-column {
+					flex-direction: column;
+				}
+
+				.align-items-end {
+					align-items: flex-end;
+				}
+
+				.align-items-center {
+					align-items: center;
+				}
+			</style>
+
+		</main>
 		<!-- End - Content Body -->
-		
-			<!-- Start - Footer -->
-	<div class="footer">
-		<div class="copyright text-center">
-		   <p class="mb-0">Copyright © Developed by <a href="https://dexignzone.com/" target="_blank">DexignZone</a> <span class="current-year">2025</span></p>
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+
+	<!-- Start - Page Scripts -->
+	<!-- Required Vendors -->
+	<script src="assets/vendor/global/global.min.js"></script>
+	
+	<!-- Add SweetAlert2 -->
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+	<!-- Remark Modal -->
+	<div class="modal fade" id="remarkModal" tabindex="-1" role="dialog" aria-labelledby="remarkModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header bg-primary text-white">
+					<h5 class="modal-title" id="remarkModalLabel">
+						<i class="fas fa-envelope me-2"></i> Send Remark to <?php echo htmlspecialchars($practitioner['practitioner_name']); ?>
+					</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<form id="remarkForm">
+						<div class="email-header bg-light p-3 mb-3 rounded">
+							<div class="mb-3">
+								<label for="recipientEmail" class="form-label fw-bold text-muted">
+									<i class="fas fa-at me-1"></i> To:
+								</label>
+								<input type="email" class="form-control-plaintext" id="recipientEmail" value="<?php echo htmlspecialchars($practitioner['practitioner_email_id']); ?>" readonly>
+							</div>
+							<div class="mb-0">
+								<label for="recipientName" class="form-label fw-bold text-muted">
+									<i class="fas fa-user me-1"></i> Recipient:
+								</label>
+								<input type="text" class="form-control-plaintext" id="recipientName" value="<?php echo htmlspecialchars($practitioner['practitioner_name']); ?>" readonly>
+							</div>
+						</div>
+						<div class="mb-3">
+							<label for="remarkMessage" class="form-label fw-bold">
+								<i class="fas fa-comment-alt me-1"></i> Remark
+							</label>
+							<textarea class="form-control" id="remarkMessage" rows="6" 
+								placeholder="Enter your detailed instructions or comments to the practitioner..."></textarea>
+							<div class="form-text">
+								<i class="fas fa-info-circle me-1"></i> Provide clear instructions about what actions the practitioner needs to take.
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+						<i class="fas fa-times me-1"></i> Close
+					</button>
+					<button type="button" class="btn btn-primary" id="sendRemarkBtn">
+						<i class="fas fa-paper-plane me-1"></i> Send Remark
+					</button>
+				</div>
+			</div>
 		</div>
 	</div>
-	<!-- End - Footer -->
 
-	
-		<!-- End - Add Task Modal -->
+	<script>
+	document.addEventListener('DOMContentLoaded', function() {
+		// Show SweetAlert notifications for PHP messages
+		<?php if (isset($message)): ?>
+		Swal.fire({
+			title: '<?php echo $alert_type == "success" ? "Success!" : ($alert_type == "info" ? "Information" : "Error!"); ?>',
+			text: '<?php echo addslashes($message); ?>',
+			icon: '<?php echo $alert_type; ?>',
+			confirmButtonColor: '#3085d6'
+		});
+		<?php endif; ?>
+
+		// Initialize remark modal
+		const remarkModal = new bootstrap.Modal(document.getElementById('remarkModal'));
 		
-	</div>
-	<!-- End - Main Wrapper -->
+		// Handle send remark button click
+		document.getElementById('openRemarkModal').addEventListener('click', function() {
+			remarkModal.show();
+		});
 
+		// Handle send remark submission
+		document.getElementById('sendRemarkBtn').addEventListener('click', function() {
+			const email = document.getElementById('recipientEmail').value;
+			const name = document.getElementById('recipientName').value;
+			const message = document.getElementById('remarkMessage').value;
+			const practitionerId = <?php echo $practitioner_id; ?>;
 
+			if (!message.trim()) {
+				Swal.fire({
+					title: 'Required Field',
+					text: 'Please enter a remark message',
+						icon: 'warning',
+						confirmButtonColor: '#3085d6'
+				});
+				return;
+			}
 
+			// Show loading state
+			Swal.fire({
+				title: 'Sending...',
+				text: 'Please wait while we send your remark.',
+				allowOutsideClick: false,
+				allowEscapeKey: false,
+				showConfirmButton: false,
+				didOpen: () => {
+					Swal.showLoading();
+				}
+			});
 
+			// Create form data
+			const formData = new FormData();
+			formData.append('email', email);
+			formData.append('name', name);
+			formData.append('message', message);
+			formData.append('practitioner_id', practitionerId);
 
-
-
-    <!-- Email Model -->
-     <!-- Email Modal -->
-    <div class="modal fade" id="remarkModal" tabindex="-1" role="dialog" aria-labelledby="remarkModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="remarkModalLabel">
-                        <i class="fas fa-envelope me-2"></i> Send Remark to <span id="recipientNameTitle">Practitioner</span>
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="remarkForm">
-                        <div class="email-header bg-light p-3 mb-3 rounded">
-                            <div class="mb-3">
-                                <label for="recipientEmail" class="form-label fw-bold text-muted">
-                                    <i class="fas fa-at me-1"></i> To:
-                                </label>
-                                <input type="email" class="form-control-plaintext" id="recipientEmail" readonly>
-                            </div>
-                            <div class="mb-0">
-                                <label for="recipientName" class="form-label fw-bold text-muted">
-                                    <i class="fas fa-user me-1"></i> Recipient:
-                                </label>
-                                <input type="text" class="form-control-plaintext" id="recipientName" readonly>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="remarkMessage" class="form-label fw-bold">
-                                <i class="fas fa-comment-alt me-1"></i> Remark
-                            </label>
-                            <textarea class="form-control" id="remarkMessage" rows="6" 
-                                placeholder="Enter your detailed instructions or comments to the practitioner..."></textarea>
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i> Provide clear instructions about what actions the practitioner needs to take.
-                            </div>
-                        </div>
-                        <input type="hidden" id="practitionerId" value="">
-                    </form>
-                    <div id="loadingSpinner" class="text-center my-4 d-none">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Sending...</span>
-                        </div>
-                        <p class="mt-2">Sending email, please wait...</p>
-                    </div>
-                    <div id="successAnimation" class="text-center my-4 d-none">
-                        <div class="mb-3">
-                            <i class="fas fa-check-circle text-success" style="font-size: 60px;"></i>
-                        </div>
-                        <h4 class="text-success">Email Sent Successfully!</h4>
-                        <p class="text-muted">Your remark has been delivered to the practitioner.</p>
-                    </div>
-                    <div id="errorMessage" class="alert alert-danger d-none">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <span id="errorText"></span>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i> Close
-                    </button>
-                    <button type="button" class="btn btn-primary" id="sendRemarkBtn">
-                        <i class="fas fa-paper-plane me-1"></i> Send Remark
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+			// Create a new XMLHttpRequest
+			const xhr = new XMLHttpRequest();
+			xhr.open('POST', 'state_admin/send_remark.php', true);
+			
+			xhr.onreadystatechange = function() {
+				if (this.readyState === XMLHttpRequest.DONE) {
+					if (this.status === 200) {
+						const result = this.responseText;
+						console.log('Response:', result);
+						
+						if (result.includes('successfully')) {
+							Swal.fire({
+								icon: 'success',
+								title: 'Success!',
+								text: 'Your remark has been sent successfully.',
+								timer: 2000,
+								showConfirmButton: false
+							}).then(() => {
+								remarkModal.hide();
+								document.getElementById('remarkMessage').value = '';
+							});
+						} else {
+							Swal.fire({
+								icon: 'error',
+								title: 'Error!',
+								text: result || 'Failed to send remark. Please try again.',
+								confirmButtonColor: '#3085d6'
+							});
+						}
+					} else {
+						console.error('XHR Error:', this.status, this.statusText);
+						Swal.fire({
+							icon: 'error',
+							title: 'Error!',
+							text: `Server error: ${this.status} ${this.statusText}`,
+							confirmButtonColor: '#3085d6'
+						});
+					}
+				}
+			};
+			
+			// Handle network errors
+			xhr.onerror = function() {
+				console.error('Network Error');
+				Swal.fire({
+					icon: 'error',
+					title: 'Connection Error',
+					text: 'Unable to connect to the server. Please check your internet connection.',
+					confirmButtonColor: '#3085d6'
+				});
+			};
+			
+			// Send the request
+			xhr.send(formData);
+		});
+	});
+	</script>
 	
-	<!-- Start - Page Scripts -->
-    <!-- Required Vendors -->
-    <script src="../assets/vendor/global/global.min.js"></script>
-    
-    <!-- Add SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <script>
-    // Show notification function using SweetAlert2
-    function showNotification(title, message, type) {
-        Swal.fire({
-            title: title,
-            text: message,
-            icon: type,
-            confirmButtonColor: '#3085d6',
-            confirmButtonText: 'OK'
-        });
-    }
-
-    // Show confirmation dialog using SweetAlert2
-    function showConfirmation(title, message, callback) {
-        Swal.fire({
-            title: title,
-            text: message,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, proceed!',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                callback();
-            }
-        });
-    }
-
-    // Checkbox functionality
-    document.getElementById('checkAll').addEventListener('change', function() {
-        const checkboxes = document.getElementsByClassName('practitioner-checkbox');
-        for (let checkbox of checkboxes) {
-            checkbox.checked = this.checked;
-        }
-    });
-
-    // Bulk action functionality
-    function submitBulkAction(action) {
-        const checkboxes = document.getElementsByClassName('practitioner-checkbox');
-        const selectedIds = [];
-        
-        for (let checkbox of checkboxes) {
-            if (checkbox.checked) {
-                selectedIds.push(checkbox.value);
-            }
-        }
-
-        if (selectedIds.length === 0) {
-            showNotification(
-                'No Selection',
-                'Please select at least one practitioner',
-                'warning'
-            );
-            return;
-        }
-
-        showConfirmation(
-            'Confirm Action',
-            `Are you sure you want to ${action} the selected practitioners?`,
-            function() {
-                document.getElementById('bulkAction').value = action;
-                document.getElementById('selectedPractitioners').value = JSON.stringify(selectedIds);
-                document.getElementById('bulkActionForm').submit();
-            }
-        );
-    }
-
-    // Send Remark functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        const remarkModal = new bootstrap.Modal(document.getElementById('remarkModal'));
-        
-        // Handle send remark button clicks
-        document.querySelectorAll('.send-remark-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const email = this.dataset.email;
-                const name = this.dataset.name;
-                const id = this.dataset.id;
-
-                document.getElementById('recipientEmail').value = email;
-                document.getElementById('recipientName').value = name;
-                document.getElementById('practitionerId').value = id;
-                document.getElementById('recipientNameTitle').textContent = name;
-                
-                // Reset form state
-                document.getElementById('remarkMessage').value = '';
-                document.getElementById('loadingSpinner').classList.add('d-none');
-                document.getElementById('successAnimation').classList.add('d-none');
-                document.getElementById('errorMessage').classList.add('d-none');
-                document.getElementById('remarkForm').classList.remove('d-none');
-                document.getElementById('sendRemarkBtn').disabled = false;
-
-                remarkModal.show();
-            });
-        });
-
-        // Handle send remark submission
-        document.getElementById('sendRemarkBtn').addEventListener('click', function() {
-            const email = document.getElementById('recipientEmail').value;
-            const name = document.getElementById('recipientName').value;
-            const message = document.getElementById('remarkMessage').value;
-
-            if (!message.trim()) {
-                showNotification(
-                    'Required Field',
-                    'Please enter a remark message',
-                    'warning'
-                );
-                return;
-            }
-
-            // Show loading state
-            Swal.fire({
-                title: 'Sending...',
-                text: 'Please wait while we send your remark.',
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-                showConfirmButton: false,
-                willOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-
-            // Send the remark
-            fetch('send_remark.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&message=${encodeURIComponent(message)}`
-            })
-            .then(response => response.text())
-            .then(result => {
-                if (result.includes('successfully')) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success!',
-                        text: 'Your remark has been sent successfully.',
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        remarkModal.hide();
-                    });
-                } else {
-                    throw new Error(result);
-                }
-            })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: error.message || 'Failed to send remark. Please try again.'
-                });
-            });
-        });
-    });
-
-    // Show SweetAlert notifications for PHP messages
-    <?php if (isset($message)): ?>
-    document.addEventListener('DOMContentLoaded', function() {
-        showNotification(
-            '<?php echo $alert_type == "success" ? "Success!" : "Error!"; ?>',
-            '<?php echo addslashes($message); ?>',
-            '<?php echo $alert_type; ?>'
-        );
-    });
-    <?php endif; ?>
-
-    <?php if (isset($auto_message)): ?>
-    document.addEventListener('DOMContentLoaded', function() {
-        showNotification(
-            'System Update',
-            '<?php echo addslashes($auto_message); ?>',
-            '<?php echo $auto_alert_type; ?>'
-        );
-    });
-    <?php endif; ?>
-    </script>
-
-    <!-- Script For Datatables -->
-    <script src="../assets/vendor/datatables/js/jquery.dataTables.min.js"></script>
-    <script src="../assets/vendor/datatables/js/dataTables.buttons.min.js"></script>
-    <script src="../assets/vendor/datatables/js/buttons.html5.min.js"></script>
-    <script src="../assets/vendor/datatables/js/jszip.min.js"></script>
-    
-    <!-- Script For Bootstrap Datepicker -->
-    <script src="../assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
-    
-    <!-- Script For Dashboard -->
-    <script src="../assets/js/dashboard/dashboard.js"></script>
-    
-    <!-- Script For Multiple Languages -->
-    <script src="../assets/js/jquery.localizationTool.js"></script>
-    <script src="../assets/js/translator.js"></script>
-    
-    <!-- Script For Custom JS -->
-    <script src="../assets/js/deznav-init.js"></script>
-    <script src="../assets/js/custom.js"></script>
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexchart/apexchart.js"></script>
+	
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	
+	<!-- Script For Lightgallery -->
+	<script src="assets/vendor/lightgallery/js/lightgallery-all.min.js"></script>
+	
+	<!-- Script For Draggable -->
+	<script src="assets/vendor/draggable/draggable.js"></script>
+	
+	<!-- Script For Account And Profile -->
+	<script src="assets/js/dashboard/profile.js"></script>
+		
+	<!-- Script For Multiple Languages -->
+	<script src="assets/js/jquery.localizationTool.js"></script>
+    <script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
 </body>
 </html>
-
