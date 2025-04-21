@@ -1375,7 +1375,7 @@ $pageTitle = "View Practitioner Details | Karnataka State Allied & Healthcare Co
 					</div>
 					<div class="clearfix d-xl-flex flex-grow-1">
 						<div class="clearfix pe-md-5">
-							<h3 class="fw-semibold mb-1"><?php echo htmlspecialchars($practitioner['practitioner_name']); ?></h3>
+							<h2 class="fw-semibold mb-1 "><?php echo htmlspecialchars($practitioner['practitioner_name']); ?></h2>
 							<ul class="d-flex flex-wrap align-items-center list-unstyled mb-3">
 								<li class="me-3 d-inline-flex align-items-center">
 									<i class="fas fa-id-card me-1"></i> ID: <?php echo $practitioner['practitioner_id']; ?>
@@ -1393,7 +1393,7 @@ $pageTitle = "View Practitioner Details | Karnataka State Allied & Healthcare Co
 										<i class="fas fa-phone"></i>
 									</div>
 									<div class="clearfix ms-2">
-										<h3 class="mb-0 fw-semibold lh-1"><?php echo htmlspecialchars($practitioner['practitioner_mobile_number']); ?></h3>
+										<h3 class="mb-0 fw-semibold lh-1 fs-6"><?php echo htmlspecialchars($practitioner['practitioner_mobile_number']); ?></h3>
 										<span class="small">Contact Number</span>
 									</div>
 								</div>
@@ -1402,7 +1402,7 @@ $pageTitle = "View Practitioner Details | Karnataka State Allied & Healthcare Co
 										<i class="fas fa-envelope"></i>
 									</div>
 									<div class="clearfix ms-2">
-										<h3 class="mb-0 fw-semibold lh-1"><?php echo htmlspecialchars($practitioner['practitioner_email_id']); ?></h3>
+										<h3 class="mb-0 fw-semibold lh-1 fs-6"><?php echo htmlspecialchars($practitioner['practitioner_email_id']); ?></h3>
 										<span class="small">Email Address</span>
 									</div>
 								</div>
@@ -1422,7 +1422,11 @@ $pageTitle = "View Practitioner Details | Karnataka State Allied & Healthcare Co
 						<div class="clearfix mt-3 mt-xl-0 ms-auto d-flex flex-column col-xl-3">
 							<!-- Status Update and Actions Section -->
 							<div class="d-flex flex-column align-items-end gap-2 mb-3">
-								<?php if($practitioner['registration_status'] != 'Active' && empty($practitioner['registration_number'])): ?>
+                            <a href="state_admin/landing.php" class="btn btn-outline-primary rounded-pill px-4 py-2 shadow">
+  ⬅️ Back To Dashboard
+</a>>
+
+                            <?php if($practitioner['registration_status'] != 'Active' && empty($practitioner['registration_number'])): ?>
 									<div class="d-flex gap-2 align-items-center">
 										<form method="POST" class="d-flex gap-2">
 											<select name="status" class="form-select form-select-sm" style="min-width: 140px;">

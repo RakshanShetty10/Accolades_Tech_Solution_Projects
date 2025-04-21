@@ -1416,55 +1416,75 @@ $sql = "SELECT p.*, rt.registration_type
         ORDER BY p.practitioner_id DESC";
 $result = $conn->query($sql);
 ?>
-
+<style>
+.transition {
+    transition: all 0.3s ease;
+}
+a:hover .transition {
+    transform: scale(1.03);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+</style>
 <div class="container-fluid">
     
-    
-    <div class="row">
-        <div class="col-xl-12">
-            <div class="card">
-                <div class="card-body overflow-hidden">
-                    <div class="row gx-5 gy-3">
-					<div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mt-4 mb-4">Applied Practitioner List For Approval</h1>
-    </div>
-                        <div class="col-xl-3 col-sm-6 col-6">
-                            <a href="?status=pending" class="text-decoration-none">
-                                <div class="d-flex align-items-center <?php echo $status_filter == 'pending' ? 'bg-light p-3 rounded' : ''; ?>">
-                                    <h2 class="text-warning my-0 fs-3 me-2"><?php echo $counts['pending']; ?></h2>
-                                    <span class="text-secondary fw-medium fs-5">Pending</span>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-xl-3 col-sm-6 col-6">
-                            <a href="?status=approved" class="text-decoration-none">
-                                <div class="d-flex align-items-center <?php echo $status_filter == 'approved' ? 'bg-light p-3 rounded' : ''; ?>">
-                                    <h2 class="text-success my-0 fs-3 me-2"><?php echo $counts['approved']; ?></h2>
-                                    <span class="text-secondary fw-medium fs-5">Approved</span>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-xl-3 col-sm-6 col-6">
-                            <a href="?status=active" class="text-decoration-none">
-                                <div class="d-flex align-items-center <?php echo $status_filter == 'active' ? 'bg-light p-3 rounded' : ''; ?>">
-                                    <h2 class="text-primary my-0 fs-3 me-2"><?php echo $counts['active']; ?></h2>
-                                    <span class="text-secondary fw-medium fs-5">Active</span>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-xl-3 col-sm-6 col-6">
-                            <a href="?status=inactive" class="text-decoration-none">
-                                <div class="d-flex align-items-center <?php echo $status_filter == 'inactive' ? 'bg-light p-3 rounded' : ''; ?>">
-                                    <h2 class="text-danger my-0 fs-3 me-2"><?php echo $counts['inactive']; ?></h2>
-                                    <span class="text-secondary fw-medium fs-5">Inactive</span>
-                                </div>
-                            </a>
-                        </div>
+<div class="row">
+    <div class="col-xl-12">
+        <div class="card">
+            <div class="card-body overflow-hidden">
+                <div class="row gx-4 gy-3">
+                    <div class="d-flex justify-content-between align-items-center mb-6">
+                        <h1 class="mt-2 mb-0 fs-3">Applied Practitioner List </h1>
                     </div>
+
+                    <!-- Pending -->
+                    <div class="col-xl-3 col-sm-6 col-6">
+                        <a href="?status=pending" class="text-decoration-none">
+                            <div class="d-flex align-items-center justify-content-start p-3 rounded shadow-sm transition 
+                                <?php echo $status_filter == 'pending' ? 'bg-warning bg-opacity-10 border border-warning' : 'bg-white'; ?>">
+                                <h2 class="text-warning my-0 fs-3 me-3"><?php echo $counts['pending']; ?></h2>
+                                <span class="text-dark fw-semibold fs-5">Pending</span>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- Approved -->
+                    <div class="col-xl-3 col-sm-6 col-6">
+                        <a href="?status=approved" class="text-decoration-none">
+                            <div class="d-flex align-items-center justify-content-start p-3 rounded shadow-sm transition 
+                                <?php echo $status_filter == 'approved' ? 'bg-success bg-opacity-10 border border-success' : 'bg-white'; ?>">
+                                <h2 class="text-success my-0 fs-3 me-3"><?php echo $counts['approved']; ?></h2>
+                                <span class="text-dark fw-semibold fs-5">Approved</span>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- Active -->
+                    <div class="col-xl-3 col-sm-6 col-6">
+                        <a href="?status=active" class="text-decoration-none">
+                            <div class="d-flex align-items-center justify-content-start p-3 rounded shadow-sm transition 
+                                <?php echo $status_filter == 'active' ? 'bg-primary bg-opacity-10 border border-primary' : 'bg-white'; ?>">
+                                <h2 class="text-primary my-0 fs-3 me-3"><?php echo $counts['active']; ?></h2>
+                                <span class="text-dark fw-semibold fs-5">Active</span>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- Inactive -->
+                    <div class="col-xl-3 col-sm-6 col-6">
+                        <a href="?status=inactive" class="text-decoration-none">
+                            <div class="d-flex align-items-center justify-content-start p-3 rounded shadow-sm transition 
+                                <?php echo $status_filter == 'inactive' ? 'bg-danger bg-opacity-10 border border-danger' : 'bg-white'; ?>">
+                                <h2 class="text-danger my-0 fs-3 me-3"><?php echo $counts['inactive']; ?></h2>
+                                <span class="text-dark fw-semibold fs-5">Inactive</span>
+                            </div>
+                        </a>
+                    </div>
+
                 </div>
             </div>
         </div>
-        
+    </div>
+</div>
         <div class="col-xl-12">
             <div class="card">
                 <div class="card-header border-0">

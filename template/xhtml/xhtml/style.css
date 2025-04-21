@@ -1,6 +1,6 @@
 :root {
-    --primary-color: #005ca9;
-    --secondary-color: #00a0df;
+    --primary-color: #192a56;
+    --secondary-color: #273c75bb;
     --accent-color: #20c997;
     --light-color: #f8f9fa;
     --dark-color: #343a40;
@@ -12,6 +12,16 @@
     --transition: all 0.3s ease;
 }
 
+/* :root {
+
+    --accent-color: #44bd32;
+    --light-color: #f5f6fa;
+    --dark-color: #2f3640;
+    --theme-color: #192a56;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    --transition: all 0.3s ease;
+  } */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -318,6 +328,7 @@ label.required::after {
     transition: var(--transition);
     display: flex;
     align-items: center;
+    outline: none;
 }
 
 .btn i {
@@ -325,9 +336,14 @@ label.required::after {
 }
 
 .btn:hover {
-    background-color: darken(var(--primary-color), 10%);
+    background-color: var(--secondary-color);
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.btn:focus {
+    outline: none;
+    box-shadow: none;
 }
 
 .btn:active {
