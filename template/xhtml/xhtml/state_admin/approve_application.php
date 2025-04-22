@@ -1,8 +1,8 @@
 <?php
 session_start();
 
-require_once '../config/config.php';
-//require_once '../config/utils.php';
+require_once '../config/connection.php';
+require_once '../config/utils.php';
 // require_once '../config/mail-helper.php';
 // require_once '../config/sms-helper.php';
 
@@ -14,7 +14,7 @@ date_default_timezone_set('Asia/Kolkata');
 <html lang="en">
 
 <head>
-	<!-- <?php require_once 'include/meta.php'; ?> -->
+	<?php require_once 'include/meta.php'; ?>
 	<link href="./vendor/tagify/dist/tagify.css" rel="stylesheet">
 	<title><?php echo $site; ?> Practitioner</title>
 </head>
@@ -127,11 +127,30 @@ date_default_timezone_set('Asia/Kolkata');
 		}
 	}
 
-	if (empty($_GET['page_no'])) {
+	// Get total counts for dashboard statistics
+	$total_sql = "SELECT 
+		COUNT(*) as total, 
+		SUM(CASE WHEN registration_status = 'Approved' THEN 1 ELSE 0 END) as approved,
+		SUM(CASE WHEN registration_status = 'Active' THEN 1 ELSE 0 END) as active,
+		SUM(CASE WHEN registration_status = 'Pending' THEN 1 ELSE 0 END) as pending,
+		SUM(CASE WHEN registration_status = 'Inactive' THEN 1 ELSE 0 END) as inactive
+	FROM practitioner";
 
+	$total_result = mysqli_query($conn, $total_sql);
+	$counts = mysqli_fetch_array($total_result);
+
+	// Set up status filter
+	$status_filter = isset($_GET['status']) ? $_GET['status'] : 'Active';
+	$valid_statuses = ['Pending', 'Approved', 'Active', 'Inactive'];
+
+	// Validate status_filter
+	if (!in_array($status_filter, $valid_statuses)) {
+		$status_filter = 'Active';
+	}
+
+	if (empty($_GET['page_no'])) {
 		$page_no = 1;
 	} else {
-
 		$page_no = (int)$_GET['page_no'];
 	}
 
@@ -195,10 +214,8 @@ date_default_timezone_set('Asia/Kolkata');
 	$offset = ($page_no - 1) * $total_records_per_page;
 	$adjacents = "2";
 
-
-	$root_sql = "SELECT * FROM practitioner WHERE registration_status = 'Active'";
-
-	$page_sql = "SELECT COUNT(practitioner_id) As total_records FROM practitioner WHERE registration_status = 'Active'";
+	$root_sql = "SELECT * FROM practitioner WHERE registration_status = '$status_filter'";
+	$page_sql = "SELECT COUNT(practitioner_id) As total_records FROM practitioner WHERE registration_status = '$status_filter'";
 
 	if (isset($_GET['filter'])) {
 
@@ -306,12 +323,88 @@ date_default_timezone_set('Asia/Kolkata');
 				</a>
 			</div>
 			<div class="container-fluid">
+				<!-- Status Navigation Cards -->
+				<div class="row mb-3">
+					<div class="col-xl-12">
+						<div class="card">
+							<div class="card-body p-3">
+								<div class="row">
+									<!-- Pending -->
+									<div class="col-xl-3 col-sm-6 col-6">
+										<a href="?status=Pending" class="text-decoration-none">
+											<div class="d-flex align-items-center justify-content-between p-3 rounded shadow-sm
+												<?php echo $status_filter == 'Pending' ? 'bg-warning bg-opacity-10 border border-warning' : 'bg-white'; ?>">
+												<div>
+													<h5 class="text-warning my-0"><?php echo $counts['pending']; ?></h5>
+													<span class="fs-6">Pending</span>
+												</div>
+												<div class="ms-2">
+													<i class="fa fa-hourglass-half fa-2x text-warning opacity-50"></i>
+												</div>
+											</div>
+										</a>
+									</div>
+
+									<!-- Approved -->
+									<div class="col-xl-3 col-sm-6 col-6">
+										<a href="?status=Approved" class="text-decoration-none">
+											<div class="d-flex align-items-center justify-content-between p-3 rounded shadow-sm
+												<?php echo $status_filter == 'Approved' ? 'bg-success bg-opacity-10 border border-success' : 'bg-white'; ?>">
+												<div>
+													<h5 class="text-success my-0"><?php echo $counts['approved']; ?></h5>
+													<span class="fs-6">Approved</span>
+												</div>
+												<div class="ms-2">
+													<i class="fa fa-check-circle fa-2x text-success opacity-50"></i>
+												</div>
+											</div>
+										</a>
+									</div>
+
+									<!-- Active -->
+									<div class="col-xl-3 col-sm-6 col-6">
+										<a href="?status=Active" class="text-decoration-none">
+											<div class="d-flex align-items-center justify-content-between p-3 rounded shadow-sm
+												<?php echo $status_filter == 'Active' ? 'bg-primary bg-opacity-10 border border-primary' : 'bg-white'; ?>">
+												<div>
+													<h5 class="text-primary my-0"><?php echo $counts['active']; ?></h5>
+													<span class="fs-6">Active</span>
+												</div>
+												<div class="ms-2">
+													<i class="fa fa-user-check fa-2x text-primary opacity-50"></i>
+												</div>
+											</div>
+										</a>
+									</div>
+
+									<!-- Inactive -->
+									<div class="col-xl-3 col-sm-6 col-6">
+										<a href="?status=Inactive" class="text-decoration-none">
+											<div class="d-flex align-items-center justify-content-between p-3 rounded shadow-sm
+												<?php echo $status_filter == 'Inactive' ? 'bg-danger bg-opacity-10 border border-danger' : 'bg-white'; ?>">
+												<div>
+													<h5 class="text-danger my-0"><?php echo $counts['inactive']; ?></h5>
+													<span class="fs-6">Inactive</span>
+												</div>
+												<div class="ms-2">
+													<i class="fa fa-user-times fa-2x text-danger opacity-50"></i>
+												</div>
+											</div>
+										</a>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- End Status Navigation Cards -->
+
 				<div class="row">
 					<div class="col-xl-12">
 						<div class="card">
 							<div class="card-header flex-wrap border-0">
 								<div class="d-flex align-items-center">
-									<h4 class="heading mb-0" style="margin-right: 10px;">Manage Practitioner</h4>
+									<h4 class="heading mb-0" style="margin-right: 10px;"><?php echo ucfirst($status_filter); ?> Practitioners</h4>
 									<!-- <?php
 											$resPermissionCheck = mysqli_query($conn, "SELECT permission_id FROM 
                                             permission_manager WHERE permission_username = '$username' AND 
@@ -324,7 +417,25 @@ date_default_timezone_set('Asia/Kolkata');
 										Practitioner</a>
 								</div>
 								<div style="display: flex; align-items: center; gap: 0.5rem;">
+									<form id="bulkActionForm" method="POST" style="display: flex; align-items: center; gap: 0.5rem;">
+										<input type="hidden" name="bulk_action" id="bulkAction">
+										<input type="hidden" name="selected_practitioners" id="selectedPractitioners">
+										
+										<?php if ($status_filter == 'Pending' || $status_filter == 'Inactive'): ?>
+										<button type="button" class="btn btn-success btn-sm" onclick="submitBulkAction('approve')">
+											<i class="fa fa-check-circle"></i> Approve Selected
+										</button>
+										<?php endif; ?>
+										
+										<?php if ($status_filter == 'Pending' || $status_filter == 'Active' || $status_filter == 'Approved'): ?>
+										<button type="button" class="btn btn-danger btn-sm" onclick="submitBulkAction('reject')">
+											<i class="fa fa-times-circle"></i> Reject Selected
+										</button>
+										<?php endif; ?>
+									</form>
+									
 									<form id="searchForm" method="GET" style="display: flex; align-items: center; gap: 0.5rem;">
+										<input type="hidden" name="status" value="<?php echo $status_filter; ?>">
 										<select name="page_count" class="form-control form-control-sm"
 											style="min-height: 2.3rem; padding: 0.25rem 0.5rem; font-size: 0.76563rem; border-radius: 0.5rem; border: 1px solid #CCCCCC; width: 150%;"
 											onchange="this.form.submit();">
@@ -339,7 +450,7 @@ date_default_timezone_set('Asia/Kolkata');
 											style="min-height: 2.3rem; padding: 0.25rem 0.5rem; font-size: 0.76563rem; border-radius: 0.5rem; border: 1px solid #CCCCCC; width: 200%;"
 											value="<?php echo $search_number; ?>" placeholder="Registration No/Name">
 										<button class="btn btn-primary btn-sm me-1" name="filter">Search</button>
-										<a href="manage-practitioner.php"
+										<a href="approve_application.php?status=<?php echo $status_filter; ?>"
 											class="btn btn-outline-danger btn-sm">Clear</a>
 									</form>
 								</div>
@@ -402,8 +513,20 @@ date_default_timezone_set('Asia/Kolkata');
 													echo "<td class='text-end'>";
 													echo "<form method='post'>
                                                                 <a class='btn btn-primary shadow btn-xs sharp me-1' href='edit-personal.php?source=$param'><i class='fa fa-pencil'></i></a>
-                                                                <a class='btn btn-warning shadow btn-xs sharp me-1' data-bs-toggle='modal' data-bs-target='#lock$row[practitioner_id]' href='#'><i class='fa fa-lock'></i></a>
-                                                                <input autocomplete='off'  type='hidden' name='delete_id' value='$row[practitioner_id]'/>
+                                                                <a class='btn btn-info shadow btn-xs sharp me-1' data-bs-toggle='modal' data-bs-target='#view{$row['practitioner_id']}' href='#'><i class='fa fa-eye'></i></a>";
+                                                                
+													if ($status_filter == 'Pending' || $status_filter == 'Inactive') {
+														echo "<a class='btn btn-success shadow btn-xs sharp me-1' href='?status=$status_filter&action=approve&id={$row['practitioner_id']}' onclick=\"return confirm('Are you sure you want to approve this practitioner?');\"><i class='fa fa-check'></i></a>";
+													}
+													
+													if ($status_filter == 'Pending' || $status_filter == 'Active' || $status_filter == 'Approved') {
+														echo "<a class='btn btn-danger shadow btn-xs sharp me-1' href='?status=$status_filter&action=reject&id={$row['practitioner_id']}' onclick=\"return confirm('Are you sure you want to reject this practitioner?');\"><i class='fa fa-times'></i></a>";
+													}
+													
+													echo "<a class='btn btn-warning shadow btn-xs sharp me-1 send-remark-btn' href='javascript:void(0);' 
+															data-id='{$row['practitioner_id']}'
+															data-name='{$row['practitioner_name']}'
+															data-email='{$row['practitioner_email_id']}'><i class='fa fa-comment'></i></a>
                                                             </form>";
 													echo "</td>";
 
@@ -946,6 +1069,35 @@ date_default_timezone_set('Asia/Kolkata');
 	<script src="./js/custom.js"></script>
 	<script src="./js/deznav-init.js"></script>
 
+	<!-- Remark Modal -->
+	<div class="modal fade" id="remarkModal" tabindex="-1" aria-labelledby="remarkModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="remarkModalLabel">Send Remark to <span id="recipientName"></span></h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<form id="remarkForm">
+						<div class="mb-3">
+							<label for="recipientEmail" class="form-label">Email:</label>
+							<input type="email" class="form-control" id="recipientEmail" readonly>
+						</div>
+						<div class="mb-3">
+							<label for="remarkMessage" class="form-label">Remark:</label>
+							<textarea class="form-control" id="remarkMessage" rows="5" placeholder="Enter your remark or feedback..."></textarea>
+						</div>
+						<input type="hidden" id="practitionerId" value="">
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-primary" id="sendRemarkBtn">Send Remark</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<script>
 		var fromDate = document.getElementById("from_date");
 		var toDate = document.getElementById("to_date");
@@ -965,23 +1117,96 @@ date_default_timezone_set('Asia/Kolkata');
 				toDate.setCustomValidity("");
 			}
 		});
-	</script>
 
-	<script>
+		// Function to submit bulk actions
+		function submitBulkAction(action) {
+			const checkboxes = document.querySelectorAll('.form-check-input[name="selected_practitioners[]"]');
+			const selectedIds = [];
+			
+			// Collect all selected practitioner IDs
+			checkboxes.forEach(checkbox => {
+				if (checkbox.checked) {
+					selectedIds.push(checkbox.value);
+				}
+			});
+			
+			if (selectedIds.length === 0) {
+				alert('Please select at least one practitioner.');
+				return;
+			}
+			
+			// Confirm before proceeding
+			let confirmMessage = action === 'approve' 
+				? 'Are you sure you want to approve the selected practitioners?' 
+				: 'Are you sure you want to reject the selected practitioners?';
+				
+			if (confirm(confirmMessage)) {
+				// Set the form values and submit
+				document.getElementById('bulkAction').value = action;
+				document.getElementById('selectedPractitioners').value = JSON.stringify(selectedIds);
+				document.getElementById('bulkActionForm').submit();
+			}
+		}
+
 		$(document).ready(function() {
+			// Handle click on checkAll checkbox
+			$('#checkAll').on('change', function() {
+				$('.form-check-input[name="selected_practitioners[]"]').prop('checked', $(this).prop('checked'));
+			});
+
+			// Remark modal functionality
+			$('.send-remark-btn').on('click', function() {
+				const practitionerId = $(this).data('id');
+				const practitionerName = $(this).data('name');
+				const practitionerEmail = $(this).data('email');
+
+				$('#practitionerId').val(practitionerId);
+				$('#recipientName').text(practitionerName);
+				$('#recipientEmail').val(practitionerEmail);
+				$('#remarkMessage').val('');
+
+				$('#remarkModal').modal('show');
+			});
+
+			// Send remark button click
+			$('#sendRemarkBtn').on('click', function() {
+				const practitionerId = $('#practitionerId').val();
+				const remarkMessage = $('#remarkMessage').val();
+
+				if (remarkMessage.trim() === '') {
+					alert('Please enter a remark message.');
+					return;
+				}
+
+				// AJAX call to send the remark
+				$.ajax({
+					url: 'ajax/send_remark.php',
+					type: 'POST',
+					data: {
+						practitioner_id: practitionerId,
+						remark: remarkMessage
+					},
+					success: function(response) {
+						// Handle successful sending
+						$('#remarkModal').modal('hide');
+						alert('Remark sent successfully!');
+					},
+					error: function(xhr, status, error) {
+						// Handle error
+						alert('Error sending remark: ' + error);
+					}
+				});
+			});
 
 			$('#registration_type').change(function() {
-
 				var registrationType = this.value;
 				var practitioner_title = document.getElementById('practitioner_title');
 				var registration_number = document.getElementById('registration_number');
 
 				if (registrationType == 1) {
-
 					practitioner_title.innerHTML =
 						'<option value="Dr.">Dr.</option>';
 				} else {
-
 					practitioner_title.innerHTML =
 						'<option value="">Choose</option><option value="Mr.">Mr.</option><option value="Mrs.">Mrs.</option><option value="Miss.">Miss.</option>';
 				}
@@ -993,13 +1218,13 @@ date_default_timezone_set('Asia/Kolkata');
 						registrationType: registrationType
 					},
 					success: function(response) {
-
 						registration_number.innerText = response;
 					}
 				});
 			});
 		});
 	</script>
+
 	<script>
 		function setupAutofill(inputId, dropdownId, fetchUrl) {
 			const input = document.getElementById(inputId);

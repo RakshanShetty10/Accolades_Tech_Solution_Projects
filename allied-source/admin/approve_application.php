@@ -1,8 +1,8 @@
 <?php
 session_start();
 
-require_once '../config/config.php';
-//require_once '../config/utils.php';
+require_once '../config/connection.php';
+// require_once 'config/utils.php';
 // require_once '../config/mail-helper.php';
 // require_once '../config/sms-helper.php';
 
@@ -14,7 +14,7 @@ date_default_timezone_set('Asia/Kolkata');
 <html lang="en">
 
 <head>
-	<!-- <?php require_once 'include/meta.php'; ?> -->
+	<?php require_once 'include/meta.php'; ?>
 	<link href="./vendor/tagify/dist/tagify.css" rel="stylesheet">
 	<title><?php echo $site; ?> Practitioner</title>
 </head>
@@ -25,12 +25,12 @@ date_default_timezone_set('Asia/Kolkata');
 	<?php
 	// require_once './include/pre-loader.php';
 
-	if (empty($_SESSION['user_name'])) {
+	// if (empty($_SESSION['user_name'])) {
 
-		echo "<script>location.href = 'index.php'</script>";
-	}
+	// 	echo "<script>location.href = 'index.php'</script>";
+	// }
 
-	$username = $_SESSION['user_name'];
+	// $username = $_SESSION['user_name'];
 
 	// $resPermissionCheck = mysqli_query($conn, "SELECT permission_id FROM 
 	//     permission_manager WHERE permission_username = '$username' AND 

@@ -441,24 +441,32 @@ $pageTitle = "View Practitioner Details | Karnataka State Allied & Healthcare Co
         <!-- Sidebar -->
         <div class="bg-dark border-right" id="sidebar-wrapper">
             <div class="sidebar-heading text-center text-white py-4">
-                <img src="../../ksahc_logo.png" alt="Logo" class="logo-img mb-2" style="max-width: 60px;">
-                <div>KSAHC Admin</div>
+                <img src="../../ksahc_logo.png" alt="Logo" class="logo-img mb-2" style="max-width: 80px;">
+                <div>KSAHC Central Admin</div>
             </div>
             <div class="list-group list-group-flush">
-                <a href="index.php" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                <a href="index.php" class="list-group-item list-group-item-action bg-dark text-white active">
+                    <i class="fas fa-tachometer-alt mr-2"></i> Approve Practitioner
                 </a>
-                <a href="practitioners.php" class="list-group-item list-group-item-action bg-dark text-white active">
-                    <i class="fas fa-user-md mr-2"></i> Practitioners
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fas fa-user-md mr-2"></i> Central Registry
                 </a>
-                <a href="colleges.php" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fas fa-university mr-2"></i> Colleges
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fas fa-user-md mr-2"></i> NOC
                 </a>
-                <a href="universities.php" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fas fa-graduation-cap mr-2"></i> Universities
+                
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fas fa-user-md mr-2"></i> Accounts
                 </a>
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fas fa-user-md mr-2"></i> HelpLine
+                </a>
+                
                 <a href="settings.php" class="list-group-item list-group-item-action bg-dark text-white">
                     <i class="fas fa-cog mr-2"></i> Settings
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fas fa-user-md mr-2"></i> Reports
                 </a>
                 <a href="logout.php" class="list-group-item list-group-item-action bg-dark text-white">
                     <i class="fas fa-sign-out-alt mr-2"></i> Logout

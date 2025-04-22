@@ -463,13 +463,27 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
             </div>
             <div class="list-group list-group-flush">
                 <a href="index.php" class="list-group-item list-group-item-action bg-dark text-white active">
-                    <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                    <i class="fas fa-tachometer-alt mr-2"></i> Approve Practitioner
                 </a>
-                <a href="practitioners.php" class="list-group-item list-group-item-action bg-dark text-white">
-                    <i class="fas fa-user-md mr-2"></i> Practitioners
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fas fa-user-md mr-2"></i> Central Registry
                 </a>
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fas fa-user-md mr-2"></i> NOC
+                </a>
+                
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fas fa-user-md mr-2"></i> Accounts
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fas fa-user-md mr-2"></i> HelpLine
+                </a>
+                
                 <a href="settings.php" class="list-group-item list-group-item-action bg-dark text-white">
                     <i class="fas fa-cog mr-2"></i> Settings
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-dark text-white">
+                    <i class="fas fa-user-md mr-2"></i> Reports
                 </a>
                 <a href="logout.php" class="list-group-item list-group-item-action bg-dark text-white">
                     <i class="fas fa-sign-out-alt mr-2"></i> Logout
@@ -506,7 +520,7 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
             
             <div class="container-fluid p-4">
                 <h1 class="h3 mb-4 text-gray-800 font-weight-bold">
-                    <i class="fas fa-clipboard-list mr-2 text-primary"></i>Approved Practitioners
+                    <i class="fas fa-clipboard-list mr-2 text-primary"></i>Approve Practitioner
                 </h1>
                 
                 <?php if(isset($message)): ?>
@@ -520,189 +534,197 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
                 <?php endif; ?>
                 
                 <!-- Advanced Filter Section -->
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">
-                            <i class="fas fa-filter mr-2"></i>Filter Options
-                            <button class="btn btn-sm btn-link float-right" type="button" data-toggle="collapse" data-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
-                                <i class="fas fa-chevron-down"></i>
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-filter mr-2"></i>Filter Options
+        </h6>
+        <button class="btn btn-sm btn-link" type="button" data-toggle="collapse" data-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+            <i class="fas fa-chevron-down"></i>
+        </button>
+    </div>
+    <div class="collapse show" id="filterCollapse">
+        <div class="card-body">
+            <form method="GET" id="filter-form">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="states"><strong>States</strong></label>
+                        <select class="form-control select2-multiple" id="states" name="states[]" multiple="multiple">
+                            <option value="Karnataka" selected>Karnataka</option>
+                            <option value="Andhra Pradesh">Andhra Pradesh</option>
+                            <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                            <option value="Assam">Assam</option>
+                            <option value="Bihar">Bihar</option>
+                            <option value="Chhattisgarh">Chhattisgarh</option>
+                            <option value="Goa">Goa</option>
+                            <option value="Gujarat">Gujarat</option>
+                            <option value="Haryana">Haryana</option>
+                            <option value="Himachal Pradesh">Himachal Pradesh</option>
+                            <option value="Jharkhand">Jharkhand</option>
+                            <option value="Kerala">Kerala</option>
+                            <option value="Madhya Pradesh">Madhya Pradesh</option>
+                            <option value="Maharashtra">Maharashtra</option>
+                            <option value="Manipur">Manipur</option>
+                            <option value="Meghalaya">Meghalaya</option>
+                            <option value="Mizoram">Mizoram</option>
+                            <option value="Nagaland">Nagaland</option>
+                            <option value="Odisha">Odisha</option>
+                            <option value="Punjab">Punjab</option>
+                            <option value="Rajasthan">Rajasthan</option>
+                            <option value="Sikkim">Sikkim</option>
+                            <option value="Tamil Nadu">Tamil Nadu</option>
+                            <option value="Telangana">Telangana</option>
+                            <option value="Tripura">Tripura</option>
+                            <option value="Uttar Pradesh">Uttar Pradesh</option>
+                            <option value="Uttarakhand">Uttarakhand</option>
+                            <option value="West Bengal">West Bengal</option>
+                            <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                            <option value="Chandigarh">Chandigarh</option>
+                            <option value="Dadra and Nagar Haveli">Dadra and Nagar Haveli</option>
+                            <option value="Daman and Diu">Daman and Diu</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                            <option value="Ladakh">Ladakh</option>
+                            <option value="Lakshadweep">Lakshadweep</option>
+                            <option value="Puducherry">Puducherry</option>
+                        </select>
+                        <div id="state-statistics" class="mt-2">
+                            <div class="alert alert-info p-2 mb-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small><strong>Karnataka:</strong> 456 practitioners pending approval</small>
+                                    <button type="button" class="close" style="font-size: 1rem;" data-dismiss="alert">&times;</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="registration-year"><strong>Registration Year</strong></label>
+                        <select class="form-control" id="registration-year" name="year">
+                            <option value="">All Years</option>
+                            <option value="2023" selected>2023</option>
+                            <option value="2022">2022</option>
+                            <option value="2021">2021</option>
+                            <option value="2020">2020</option>
+                            <option value="2019">2019</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="registration-status"><strong>Status</strong></label>
+                        <select class="form-control" id="registration-status" name="status">
+                            <option value="">All Statuses</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Active">Active</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="registration-type"><strong>Registration Type</strong></label>
+                        <select class="form-control" id="registration-type" name="type">
+                            <option value="">All Types</option>
+                            <option value="1">Medical Laboratory Scientist</option>
+                            <option value="2">Radiotherapy Technologist</option>
+                            <option value="3">Optometrist</option>
+                            <option value="4">Physiotherapist</option>
+                            <option value="5">Occupational Therapist</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-9">
+                        <div class="form-group mb-0">
+                            <label for="search-input"><strong>Search</strong></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="search-input" name="search" placeholder="Search by name, email, registration number...">
+                                <div class="input-group-append">
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="fas fa-search mr-1"></i> Search
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="reset" class="btn btn-secondary btn-block" id="reset-btn">
+                            <i class="fas fa-sync-alt mr-1"></i> Reset Filters
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add this script at the end of your file or in the appropriate script section -->
+<script>
+$(document).ready(function() {
+    // Initialize select2 for multiple select
+    $('.select2-multiple').select2({
+        placeholder: "Select states",
+        allowClear: true
+    });
+    
+    // State statistics data (dummy values)
+    const stateStats = {
+        "Karnataka": "456 practitioners pending approval",
+        "Andhra Pradesh": "328 practitioners pending approval",
+        "Maharashtra": "612 practitioners pending approval",
+        "Tamil Nadu": "275 practitioners active",
+        "Delhi": "189 practitioners pending approval",
+        "Uttar Pradesh": "521 practitioners pending approval",
+        "Kerala": "198 practitioners active",
+        "Gujarat": "312 practitioners pending approval",
+        "Telangana": "245 practitioners active"
+    };
+    
+    // Function to show state statistics
+    function showStateStatistics(selectedStates) {
+        $('#state-statistics').empty();
+        
+        selectedStates.forEach(function(state) {
+            if (stateStats[state]) {
+                $('#state-statistics').append(
+                    `<div class="alert alert-info p-2 mb-1">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small><strong>${state}:</strong> ${stateStats[state]}</small>
+                            <button type="button" class="close state-remove" data-state="${state}" style="font-size: 1rem;" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
                             </button>
-                        </h6>
-                    </div>
-                    <div class="collapse show" id="filterCollapse">
-                        <div class="card-body">
-                            <form method="GET" id="filter-form">
-                                <div class="row">
-                                    <div class="col-md-3 mb-3">
-                                        <label for="states"><strong>States</strong></label>
-                                        <select class="form-control select2-multiple" id="states" name="states[]" multiple="multiple">
-                                            <option value="Karnataka" selected>Karnataka</option>
-                                            <option value="Andhra Pradesh">Andhra Pradesh</option>
-                                            <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                                            <option value="Assam">Assam</option>
-                                            <option value="Bihar">Bihar</option>
-                                            <option value="Chhattisgarh">Chhattisgarh</option>
-                                            <option value="Goa">Goa</option>
-                                            <option value="Gujarat">Gujarat</option>
-                                            <option value="Haryana">Haryana</option>
-                                            <option value="Himachal Pradesh">Himachal Pradesh</option>
-                                            <option value="Jharkhand">Jharkhand</option>
-                                            <option value="Kerala">Kerala</option>
-                                            <option value="Madhya Pradesh">Madhya Pradesh</option>
-                                            <option value="Maharashtra">Maharashtra</option>
-                                            <option value="Manipur">Manipur</option>
-                                            <option value="Meghalaya">Meghalaya</option>
-                                            <option value="Mizoram">Mizoram</option>
-                                            <option value="Nagaland">Nagaland</option>
-                                            <option value="Odisha">Odisha</option>
-                                            <option value="Punjab">Punjab</option>
-                                            <option value="Rajasthan">Rajasthan</option>
-                                            <option value="Sikkim">Sikkim</option>
-                                            <option value="Tamil Nadu">Tamil Nadu</option>
-                                            <option value="Telangana">Telangana</option>
-                                            <option value="Tripura">Tripura</option>
-                                            <option value="Uttar Pradesh">Uttar Pradesh</option>
-                                            <option value="Uttarakhand">Uttarakhand</option>
-                                            <option value="West Bengal">West Bengal</option>
-                                            <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-                                            <option value="Chandigarh">Chandigarh</option>
-                                            <option value="Dadra and Nagar Haveli">Dadra and Nagar Haveli</option>
-                                            <option value="Daman and Diu">Daman and Diu</option>
-                                            <option value="Delhi">Delhi</option>
-                                            <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-                                            <option value="Ladakh">Ladakh</option>
-                                            <option value="Lakshadweep">Lakshadweep</option>
-                                            <option value="Puducherry">Puducherry</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3 mb-3">
-                                        <label for="registration-year"><strong>Registration Year</strong></label>
-                                        <select class="form-control" id="registration-year" name="year">
-                                            <option value="">All Years</option>
-                                            <option value="2023" selected>2023</option>
-                                            <option value="2022">2022</option>
-                                            <option value="2021">2021</option>
-                                            <option value="2020">2020</option>
-                                            <option value="2019">2019</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3 mb-3">
-                                        <label for="registration-status"><strong>Status</strong></label>
-                                        <select class="form-control" id="registration-status" name="status">
-                                            <option value="">All Statuses</option>
-                                            <option value="Approved">Approved</option>
-                                            <option value="Active">Active</option>
-                                            <option value="Pending">Pending</option>
-                                            <option value="Rejected">Rejected</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3 mb-3">
-                                        <label for="registration-type"><strong>Registration Type</strong></label>
-                                        <select class="form-control" id="registration-type" name="type">
-                                            <option value="">All Types</option>
-                                            <option value="1">Medical Laboratory Scientist</option>
-                                            <option value="2">Radiotherapy Technologist</option>
-                                            <option value="3">Optometrist</option>
-                                            <option value="4">Physiotherapist</option>
-                                            <option value="5">Occupational Therapist</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="row mt-2">
-                                    <div class="col-md-9">
-                                        <div class="form-group">
-                                            <label for="search-input"><strong>Search</strong></label>
-                                            <div class="input-group">
-                                                <input type="text" class="form-control" id="search-input" name="search" placeholder="Search by name, email, registration number..." value="<?php echo htmlspecialchars($search_term); ?>">
-                                                <div class="input-group-append">
-                                                    <button class="btn btn-primary" type="submit">
-                                                        <i class="fas fa-search mr-1"></i> Search
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 d-flex align-items-end">
-                                        <button type="reset" class="btn btn-secondary btn-block">
-                                            <i class="fas fa-sync-alt mr-1"></i> Reset Filters
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
                         </div>
-                    </div>
-                </div>
+                    </div>`
+                );
+            }
+        });
+    }
+    
+    // Initial state
+    const initialStates = $('#states').val();
+    if (initialStates && initialStates.length > 0) {
+        showStateStatistics(initialStates);
+    }
+    
+    // On state selection change
+    $('#states').on('change', function() {
+        const selectedStates = $(this).val() || [];
+        showStateStatistics(selectedStates);
+    });
+    
+    // Remove state when clicking the close button
+    $(document).on('click', '.state-remove', function() {
+        const stateToRemove = $(this).data('state');
+        const currentStates = $('#states').val() || [];
+        const newStates = currentStates.filter(state => state !== stateToRemove);
+        
+        $('#states').val(newStates).trigger('change');
+    });
+    
+    // Reset button should clear the statistics as well
+    $('#reset-btn').on('click', function() {
+        $('#state-statistics').empty();
+    });
+});
+</script>
                 
-                <!-- Enhanced Dashboard Cards -->
-                <div class="row mb-4">
-                    <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card border-left-primary shadow h-100 py-2">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                            Total Approved Practitioners</div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $counts['total']; ?></div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-users fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card border-left-success shadow h-100 py-2">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                            Registered with KSAHC ID</div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $counts['registered']; ?></div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card border-left-warning shadow h-100 py-2">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                            Pending Registration</div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $counts['pending_registration']; ?></div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-clock fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card border-left-danger shadow h-100 py-2">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                                            Rejected Applications</div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800">12</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-times-circle fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
                 
                 <!-- State-wise Registration Statistics -->
                 <!-- <div class="row mb-4">
@@ -775,7 +797,7 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
                             <i class="fas fa-list mr-2"></i>Practitioner Management
                         </h6>
                         <div class="d-flex">
-                            <form class="form-inline mr-2" method="GET">
+                            <!-- <form class="form-inline mr-2" method="GET">
                                 <div class="input-group">
                                     <input type="text" class="form-control" name="search" placeholder="Search practitioners..." value="<?php echo htmlspecialchars($search_term); ?>">
                                     <div class="input-group-append">
@@ -784,7 +806,7 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
                                         </button>
                                     </div>
                                 </div>
-                            </form>
+                            </form> -->
                         </div>
                     </div> 
                     <div class="card-body">

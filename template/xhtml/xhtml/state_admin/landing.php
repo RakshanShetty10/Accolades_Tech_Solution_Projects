@@ -1367,7 +1367,7 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 			<div class="page-title">
 					<nav aria-label="breadcrumb">
 		<ol class="breadcrumb">
-			<li><h1>Task</h1></li>
+			<li><h1>Applied Practitioner List</h1></li>
 			<li class="breadcrumb-item">
 				<a href="index.html">
 					<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1377,10 +1377,10 @@ $pageTitle = "Admin Dashboard | Karnataka State Allied & Healthcare Council";
 					Home
 				</a>
 			</li>
-			<li class="breadcrumb-item active" aria-current="page">Task</li>
+			<li class="breadcrumb-item active" aria-current="page">Practtitioner List</li>
 		</ol>
 	</nav>
-				<a class="text-primary fs-13" data-bs-toggle="offcanvas" href="#addTaskmodal" role="button" aria-controls="addTaskmodal">+ Add Task</a>
+				<!-- <a class="text-primary fs-13" data-bs-toggle="offcanvas" href="#addTaskmodal" role="button" aria-controls="addTaskmodal">+ Add Task</a> -->
 			</div>
 			<!-- End - Page Title & Breadcrumb -->
 			
@@ -1547,7 +1547,9 @@ a:hover .transition {
                                                     <a href="landing_profile.php?id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-info" title="View Details">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
+													
                                                     <?php if ($status_filter == 'pending' || $status_filter == 'approved'): ?>
+
                                                         <a href="?action=approve&id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-success" title="Approve" onclick="return confirm('Are you sure you want to approve this practitioner?');">
                                                             <i class="fas fa-check"></i>
                                                         </a>
@@ -1582,11 +1584,7 @@ a:hover .transition {
 		<!-- End - Content Body -->
 		
 			<!-- Start - Footer -->
-	<div class="footer">
-		<div class="copyright text-center">
-		   <p class="mb-0">Copyright © Developed by <a href="https://dexignzone.com/" target="_blank">DexignZone</a> <span class="current-year">2025</span></p>
-		</div>
-	</div>
+	
 	<!-- End - Footer -->
 
 	
