@@ -1513,7 +1513,7 @@ a:hover .transition {
                                             <input type="checkbox" class="form-check-input" id="checkAll">
                                         </div>
                                     </th>
-                                    <th class="mw-50">ID</th>
+                                    <th class="mw-50">SI NO</th>
                                     <th class="mw-200">Name</th>
                                     <th class="mw-100">Registration Type</th>
                                     <th class="mw-100">Contact Rubber Stamp</th>

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Applied Practitioner List</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    
+    body {
+      background-color: #f9fafb;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 20px;
+    }
+    
+    .status-cards {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .status-card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 12px 24px;
+      flex: 1;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      border: 1px solid #e5e7eb;
+    }
+    
+    .status-card.pending {
+      border-color: #fcd34d;
+    }
+    
+    .status-card .count {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-right: 12px;
+    }
+    
+    .status-card .label {
+      color: #6b7280;
+      font-size: 1.125rem;
+    }
+    
+    .status-card.pending .count {
+      color: #f59e0b;
+    }
+    
+    .status-card.approved .count {
+      color: #10b981;
+    }
+    
+    .status-card.active .count {
+      color: #3b82f6;
+    }
+    
+    .status-card.inactive .count {
+      color: #ef4444;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .header h2 {
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: #1f2937;
+    }
+    
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+    }
+    
+    .btn-approve {
+      background-color: #10b981;
+      color: white;
+    }
+    
+    .btn-reject {
+      background-color: #ef4444;
+      color: white;
+    }
+    
+    .btn-export {
+      background-color: #dbeafe;
+      color: #2563eb;
+    }
+    
+    .btn i {
+      margin-right: 6px;
+    }
+    
+    .table-container {
+      background-color: white;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+    }
+    
+    th {
+      background-color: #f9fafb;
+      font-weight: 500;
+      color: #4b5563;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    th span {
+      color: #9ca3af;
+      margin-left: 4px;
+    }
+    
+    tr {
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    tr:last-child {
+      border-bottom: none;
+    }
+    
+    .contact-info div {
+      display: flex;
+      align-items: center;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    
+    .contact-info div:last-child {
+      margin-bottom: 0;
+    }
+    
+    .contact-info i {
+      margin-right: 8px;
+      font-size: 14px;
+    }
+    
+    .action-btns {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .action-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: pointer;
+      border: none;
+    }
+    
+    .action-btn.view {
+      background-color: #dbeafe;
+      color: #2563eb;
+    }
+    
+    .action-btn.approve {
+      background-color: #d1fae5;
+      color: #10b981;
+    }
+    
+    .action-btn.reject {
+      background-color: #fee2e2;
+      color: #ef4444;
+    }
+    
+    .action-btn.message {
+      background-color: #fef3c7;
+      color: #d97706;
+    }
+    
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .footer-text {
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+    
+    .pagination {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .page-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid #e5e7eb;
+      background-color: white;
+      color: #6b7280;
+    }
+    
+    .page-btn.active {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+    }
+    
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Applied Practitioner List</h1>
+    
+    <div class="status-cards">
+      <div class="status-card pending">
+        <div class="count">2</div>
+        <div class="label">Pending</div>
+      </div>
+      
+      <div class="status-card approved">
+        <div class="count">24</div>
+        <div class="label">Approved</div>
+      </div>
+      
+      <div class="status-card active">
+        <div class="count">47</div>
+        <div class="label">Active</div>
+      </div>
+      
+      <div class="status-card inactive">
+        <div class="count">3</div>
+        <div class="label">Inactive</div>
+      </div>
+    </div>
+    
+    <div class="header">
+      <h2>Pending Practitioners</h2>
+      
+      <div class="actions">
+        <button class="btn btn-approve" id="approveSelected">
+          <i>✓</i> Approve Selected
+        </button>
+        
+        <button class="btn btn-reject" id="rejectSelected">
+          <i>✕</i> Reject Selected
+        </button>
+        
+        <button class="btn btn-export">
+          <i>↓</i> Export Report
+        </button>
+      </div>
+    </div>
+    
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="selectAll"></th>
+            <th>ID <span>↕</span></th>
+            <th>Name <span>↕</span></th>
+            <th>Registration Type <span>↕</span></th>
+            <th>Contact Rubber Stamp <span>↕</span></th>
+            <th>Registration Date <span>↕</span></th>
+            <th>Actions <span>↕</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox" class="row-checkbox" data-id="127"></td>
+            <td><strong>127</strong></td>
+            <td>fds</td>
+            <td></td>
+            <td class="contact-info">
+              <div><i>✉</i></div>
+              <div><i>☎</i></div>
+            </td>
+            <td>22 Apr 2025</td>
+            <td>
+              <div class="action-btns">
+                <button class="action-btn view">👁️</button>
+                <button class="action-btn approve">✓</button>
+                <button class="action-btn reject">✕</button>
+                <button class="action-btn message">💬</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" class="row-checkbox" data-id="124"></td>
+            <td><strong>124</strong></td>
+            <td>Rakesh Shetty</td>
+            <td>Application</td>
+            <td class="contact-info">
+              <div><i>✉</i> rakshanshetty2003@gmail.com</div>
+              <div><i>☎</i> 09632612163</div>
+            </td>
+            <td>21 Apr 2025</td>
+            <td>
+              <div class="action-btns">
+                <button class="action-btn view">👁️</button>
+                <button class="action-btn approve">✓</button>
+                <button class="action-btn reject">✕</button>
+                <button class="action-btn message">💬</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <div class="footer">
+        <div class="footer-text">
+          Showing 1 to 2 of 2 entries
+        </div>
+        <div class="pagination">
+          <button class="page-btn">◀</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">▶</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const selectAllCheckbox = document.getElementById('selectAll');
+      const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+      const approveButton = document.getElementById('approveSelected');
+      const rejectButton = document.getElementById('rejectSelected');
+      
+      // Select All checkbox functionality
+      selectAllCheckbox.addEventListener('change', function() {
+        const isChecked = this.checked;
+        
+        rowCheckboxes.forEach(checkbox => {
+          checkbox.checked = isChecked;
+        });
+      });
+      
+      // Individual checkbox update
+      rowCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          const allChecked = Array.from(rowCheckboxes).every(cb => cb.checked);
+          const anyChecked = Array.from(rowCheckboxes).some(cb => cb.checked);
+          
+          selectAllCheckbox.checked = allChecked;
+          
+          approveButton.disabled = !anyChecked;
+          rejectButton.disabled = !anyChecked;
+        });
+      });
+      
+      // Action buttons functionality (demo)
+      approveButton.addEventListener('click', function() {
+        const selectedIds = Array.from(rowCheckboxes)
+          .filter(cb => cb.checked)
+          .map(cb => cb.dataset.id);
+        
+        alert('Approving IDs: ' + selectedIds.join(', '));
+      });
+      
+      rejectButton.addEventListener('click', function() {
+        const selectedIds = Array.from(rowCheckboxes)
+          .filter(cb => cb.checked)
+          .map(cb => cb.dataset.id);
+        
+        alert('Rejecting IDs: ' + selectedIds.join(', '));
+      });
+    });
+  </script>
+</body>
+</html>

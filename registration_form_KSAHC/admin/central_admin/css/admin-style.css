@@ -555,7 +555,7 @@ a {
 .form-control {
   border: 1px solid var(--gray-300);
   border-radius: var(--border-radius-sm);
-  padding: 0.75rem 1rem;
+  padding: 0rem 1rem;
   color: var(--gray-700);
   transition: var(--transition);
 }

@@ -838,49 +838,290 @@ $(document).ready(function() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php if($result && $result->num_rows > 0): ?>
-                                            <?php while($row = $result->fetch_assoc()): ?>
-                                                <tr>
-                                                    <td class="text-center">
-                                                        <input type="checkbox" name="selected_practitioners[]" value="<?php echo $row['practitioner_id']; ?>" class="practitioner-checkbox" <?php echo !empty($row['registration_number']) ? 'disabled title="Already has registration number"' : ''; ?>>
-                                                    </td>
-                                                    <td><?php echo $row['practitioner_id']; ?></td>
-                                                    <td>
-                                                        <div class="font-weight-bold"><?php echo htmlspecialchars($row['practitioner_name']); ?></div>
-                                                    </td>
-                                                    <td><?php echo isset($row['registration_type']) ? htmlspecialchars($row['registration_type']) : htmlspecialchars($row['registration_type_id']); ?></td>
-                                                    <td>
-                                                        <div><i class="fas fa-envelope text-primary mr-1"></i> <?php echo htmlspecialchars($row['practitioner_email_id']); ?></div>
-                                                        <div><i class="fas fa-phone text-success mr-1"></i> <?php echo htmlspecialchars($row['practitioner_mobile_number']); ?></div>
-                                                    </td>
-                                                    <td><?php echo date('d M Y', strtotime($row['registration_date'])); ?></td>
-                                                    <td class="text-center">
-                                                        <?php if(!empty($row['registration_number'])): ?>
-                                                            <span class="badge badge-success p-2"><?php echo htmlspecialchars($row['registration_number']); ?></span>
-                                                        <?php else: ?>
-                                                            <span class="badge badge-warning p-2">Not Generated</span>
-                                                        <?php endif; ?>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div class="btn-group">
-                                                            <a href="view_practitioner.php?id=<?php echo $row['practitioner_id']; ?>" class="btn btn-sm btn-info" title="View Details">
-                                                                <i class="fas fa-eye"></i>
-                                                            </a>
-                                                            
-                                                            <?php if(empty($row['registration_number'])): ?>
-                                                                <button type="button" class="btn btn-sm btn-success generate-single-reg" data-id="<?php echo $row['practitioner_id']; ?>" title="Generate Registration Number">
-                                                                    <i class="fas fa-id-card"></i>
-                                                                </button>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            <?php endwhile; ?>
-                                        <?php else: ?>
-                                            <tr>
-                                                <td colspan="8" class="text-center">No practitioners found</td>
-                                            </tr>
-                                        <?php endif; ?>
+                                        <!-- Row 1: No registration number -->
+                                        <tr>
+                                            <td class="text-center">
+                                                <input type="checkbox" name="selected_practitioners[]" value="1" class="practitioner-checkbox">
+                                            </td>
+                                            <td>1</td>
+                                            <td>
+                                                <div class="font-weight-bold">Rajesh Kumar</div>
+                                            </td>
+                                            <td>Medical Laboratory Scientist</td>
+                                            <td>
+                                                <div><i class="fas fa-envelope text-primary mr-1"></i> rajesh.kumar@example.com</div>
+                                                <div><i class="fas fa-phone text-success mr-1"></i> +91 9876543210</div>
+                                            </td>
+                                            <td>15 Mar 2023</td>
+                                            <td class="text-center">
+                                                <span class="badge badge-warning p-2">Not Generated</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group">
+                                                    <a href="#" class="btn btn-sm btn-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-success generate-single-reg" data-id="1" title="Generate Registration Number">
+                                                        <i class="fas fa-id-card"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Row 2: With registration number -->
+                                        <tr>
+                                            <td class="text-center">
+                                                <input type="checkbox" name="selected_practitioners[]" value="2" class="practitioner-checkbox" disabled title="Already has registration number">
+                                            </td>
+                                            <td>2</td>
+                                            <td>
+                                                <div class="font-weight-bold">Priya Sharma</div>
+                                            </td>
+                                            <td>Radiotherapy Technologist</td>
+                                            <td>
+                                                <div><i class="fas fa-envelope text-primary mr-1"></i> priya.sharma@example.com</div>
+                                                <div><i class="fas fa-phone text-success mr-1"></i> +91 8765432109</div>
+                                            </td>
+                                            <td>12 Feb 2023</td>
+                                            <td class="text-center">
+                                                <span class="badge badge-warning p-2">Not Generated</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group">
+                                                    <a href="#" class="btn btn-sm btn-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-success generate-single-reg" data-id="1" title="Generate Registration Number">
+                                                        <i class="fas fa-id-card"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Row 3: No registration number -->
+                                        <tr>
+                                            <td class="text-center">
+                                                <input type="checkbox" name="selected_practitioners[]" value="3" class="practitioner-checkbox">
+                                            </td>
+                                            <td>3</td>
+                                            <td>
+                                                <div class="font-weight-bold">Amit Patel</div>
+                                            </td>
+                                            <td>Optometrist</td>
+                                            <td>
+                                                <div><i class="fas fa-envelope text-primary mr-1"></i> amit.patel@example.com</div>
+                                                <div><i class="fas fa-phone text-success mr-1"></i> +91 7654321098</div>
+                                            </td>
+                                            <td>27 Apr 2023</td>
+                                            <td class="text-center">
+                                                <span class="badge badge-warning p-2">Not Generated</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group">
+                                                    <a href="#" class="btn btn-sm btn-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-success generate-single-reg" data-id="3" title="Generate Registration Number">
+                                                        <i class="fas fa-id-card"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Row 4: With registration number -->
+                                        <tr>
+                                            <td class="text-center">
+                                                <input type="checkbox" name="selected_practitioners[]" value="4" class="practitioner-checkbox" disabled title="Already has registration number">
+                                            </td>
+                                            <td>4</td>
+                                            <td>
+                                                <div class="font-weight-bold">Sunita Joshi</div>
+                                            </td>
+                                            <td>Physiotherapist</td>
+                                            <td>
+                                                <div><i class="fas fa-envelope text-primary mr-1"></i> sunita.joshi@example.com</div>
+                                                <div><i class="fas fa-phone text-success mr-1"></i> +91 6543210987</div>
+                                            </td>
+                                            <td>08 Jan 2023</td>
+                                            <td class="text-center">
+                                                <span class="badge badge-warning p-2">Not Generated</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group">
+                                                    <a href="#" class="btn btn-sm btn-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-success generate-single-reg" data-id="1" title="Generate Registration Number">
+                                                        <i class="fas fa-id-card"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Row 5: No registration number -->
+                                        <tr>
+                                            <td class="text-center">
+                                                <input type="checkbox" name="selected_practitioners[]" value="5" class="practitioner-checkbox">
+                                            </td>
+                                            <td>5</td>
+                                            <td>
+                                                <div class="font-weight-bold">Mohan Das</div>
+                                            </td>
+                                            <td>Occupational Therapist</td>
+                                            <td>
+                                                <div><i class="fas fa-envelope text-primary mr-1"></i> mohan.das@example.com</div>
+                                                <div><i class="fas fa-phone text-success mr-1"></i> +91 5432109876</div>
+                                            </td>
+                                            <td>19 May 2023</td>
+                                            <td class="text-center">
+                                                <span class="badge badge-warning p-2">Not Generated</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group">
+                                                    <a href="#" class="btn btn-sm btn-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-success generate-single-reg" data-id="5" title="Generate Registration Number">
+                                                        <i class="fas fa-id-card"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Row 6: With registration number -->
+                                        <tr>
+                                            <td class="text-center">
+                                                <input type="checkbox" name="selected_practitioners[]" value="6" class="practitioner-checkbox" disabled title="Already has registration number">
+                                            </td>
+                                            <td>6</td>
+                                            <td>
+                                                <div class="font-weight-bold">Kavita Singh</div>
+                                            </td>
+                                            <td>Medical Laboratory Scientist</td>
+                                            <td>
+                                                <div><i class="fas fa-envelope text-primary mr-1"></i> kavita.singh@example.com</div>
+                                                <div><i class="fas fa-phone text-success mr-1"></i> +91 4321098765</div>
+                                            </td>
+                                            <td>03 Feb 2023</td>
+                                            <td class="text-center">
+                                                <span class="badge badge-success p-2">KSAHC0129</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group">
+                                                    <a href="#" class="btn btn-sm btn-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Row 7: No registration number -->
+                                        <tr>
+                                            <td class="text-center">
+                                                <input type="checkbox" name="selected_practitioners[]" value="7" class="practitioner-checkbox">
+                                            </td>
+                                            <td>7</td>
+                                            <td>
+                                                <div class="font-weight-bold">Vikram Mehta</div>
+                                            </td>
+                                            <td>Radiotherapy Technologist</td>
+                                            <td>
+                                                <div><i class="fas fa-envelope text-primary mr-1"></i> vikram.mehta@example.com</div>
+                                                <div><i class="fas fa-phone text-success mr-1"></i> +91 3210987654</div>
+                                            </td>
+                                            <td>30 Apr 2023</td>
+                                            <td class="text-center">
+                                                <span class="badge badge-success p-2">KSAHC0012</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group">
+                                                    <a href="#" class="btn btn-sm btn-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Row 8: With registration number -->
+                                        <tr>
+                                            <td class="text-center">
+                                                <input type="checkbox" name="selected_practitioners[]" value="8" class="practitioner-checkbox" disabled title="Already has registration number">
+                                            </td>
+                                            <td>8</td>
+                                            <td>
+                                                <div class="font-weight-bold">Lakshmi Subramaniam</div>
+                                            </td>
+                                            <td>Optometrist</td>
+                                            <td>
+                                                <div><i class="fas fa-envelope text-primary mr-1"></i> lakshmi.s@example.com</div>
+                                                <div><i class="fas fa-phone text-success mr-1"></i> +91 2109876543</div>
+                                            </td>
+                                            <td>14 Mar 2023</td>
+                                            <td class="text-center">
+                                                <span class="badge badge-success p-2">KSAHC0176</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group">
+                                                    <a href="#" class="btn btn-sm btn-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Row 9: No registration number -->
+                                        <tr>
+                                            <td class="text-center">
+                                                <input type="checkbox" name="selected_practitioners[]" value="9" class="practitioner-checkbox">
+                                            </td>
+                                            <td>9</td>
+                                            <td>
+                                                <div class="font-weight-bold">Rahul Reddy</div>
+                                            </td>
+                                            <td>Physiotherapist</td>
+                                            <td>
+                                                <div><i class="fas fa-envelope text-primary mr-1"></i> rahul.reddy@example.com</div>
+                                                <div><i class="fas fa-phone text-success mr-1"></i> +91 1098765432</div>
+                                            </td>
+                                            <td>05 Jun 2023</td>
+                                            <td class="text-center">
+                                                <span class="badge badge-success p-2">KSAHC0124</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group">
+                                                    <a href="#" class="btn btn-sm btn-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Row 10: With registration number -->
+                                        <tr>
+                                            <td class="text-center">
+                                                <input type="checkbox" name="selected_practitioners[]" value="10" class="practitioner-checkbox" disabled title="Already has registration number">
+                                            </td>
+                                            <td>10</td>
+                                            <td>
+                                                <div class="font-weight-bold">Neha Gupta</div>
+                                            </td>
+                                            <td>Occupational Therapist</td>
+                                            <td>
+                                                <div><i class="fas fa-envelope text-primary mr-1"></i> neha.gupta@example.com</div>
+                                                <div><i class="fas fa-phone text-success mr-1"></i> +91 9087654321</div>
+                                            </td>
+                                            <td>22 Feb 2023</td>
+                                            <td class="text-center">
+                                                <span class="badge badge-success p-2">KSAHC0218</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group">
+                                                    <a href="#" class="btn btn-sm btn-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
