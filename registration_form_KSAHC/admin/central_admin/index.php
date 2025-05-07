@@ -471,7 +471,9 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
                 <a href="noc.php" class="list-group-item list-group-item-action bg-dark text-white">
                     <i class="fas fa-user-md mr-2"></i> NOC
                 </a>
-                
+                <a href="analytics.php" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="fas fa-chart-bar mr-2"></i> Analytics
+                </a>
                 <a href="accounts.php" class="list-group-item list-group-item-action bg-dark text-white">
                     <i class="fas fa-user-md mr-2"></i> Accounts
                 </a>

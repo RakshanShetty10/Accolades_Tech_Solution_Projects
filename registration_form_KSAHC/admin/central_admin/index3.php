@@ -471,6 +471,10 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
                 <a href="noc.php" class="list-group-item list-group-item-action bg-dark text-white">
                     <i class="fas fa-user-md mr-2"></i> NOC
                 </a>
+
+                <a href="analytics.php" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="fas fa-chart-bar mr-2"></i> Analytics
+                </a>
                 
                 <a href="accounts.php" class="list-group-item list-group-item-action bg-dark text-white">
                     <i class="fas fa-user-md mr-2"></i> Accounts
@@ -601,11 +605,11 @@ $pageTitle = "Central Admin Dashboard | Karnataka State Allied & Healthcare Coun
                         <label for="registration-year"><strong>Registration Year</strong></label>
                         <select class="form-control" id="registration-year" name="year">
                             <option value="">All Years</option>
-                            <option value="2023" selected>2023</option>
-                            <option value="2022">2022</option>
-                            <option value="2021">2021</option>
-                            <option value="2020">2020</option>
-                            <option value="2019">2019</option>
+                            <option value="2025" selected>2023</option>
+                            <option value="2024">2022</option>
+                            <option value="2023">2021</option>
+                            <option value="2021">2020</option>
+                            <option value="2020">2019</option>
                         </select>
                     </div>
                     <div class="col-md-3 mb-3">

@@ -413,6 +413,10 @@
                 <a href="noc.php" class="list-group-item list-group-item-action bg-dark text-white active">
                     <i class="fas fa-file-contract mr-2"></i> NOC
                 </a>
+
+                <a href="analytics.php" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="fas fa-chart-bar mr-2"></i> Analytics
+                </a>
                 <a href="#" class="list-group-item list-group-item-action bg-dark text-white">
                     <i class="fas fa-money-bill-wave mr-2"></i> Accounts
                 </a>

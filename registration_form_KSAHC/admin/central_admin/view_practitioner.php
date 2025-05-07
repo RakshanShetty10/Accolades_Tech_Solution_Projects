@@ -455,6 +455,9 @@ $pageTitle = "View Practitioner Details | Karnataka State Allied & Healthcare Co
                     <i class="fas fa-user-md mr-2"></i> NOC
                 </a>
                 
+                <a href="analytics.php" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="fas fa-chart-bar mr-2"></i> Analytics
+                </a>
                 <a href="#" class="list-group-item list-group-item-action bg-dark text-white">
                     <i class="fas fa-user-md mr-2"></i> Accounts
                 </a>
