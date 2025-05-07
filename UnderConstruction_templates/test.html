@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+   <!-- Add this in the <head> section or before closing </body> tag -->
+<script src="js/under-construction.js"></script>
+
+<!-- Add this where you want the under construction page to appear -->
+<!-- <div data-uc-design="minimalist"></div> -->
+<div data-uc-design="playful"></div>
+
+<!-- Add this script right after your div -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.querySelector('[data-uc-design]');
+        initUnderConstruction(container);
+    });
+</script>
+</body>
+</html>

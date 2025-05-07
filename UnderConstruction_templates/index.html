@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Under Construction Pages Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .design-preview {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+        }
+        h2 {
+            color: #444;
+            margin-bottom: 20px;
+        }
+        .code-block {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Under Construction Page Designs</h1>
+        
+        <div class="design-preview">
+            <h2>Design 1: Modern Minimalist</h2>
+            <div id="design1"></div>
+            <div class="code-block">
+                <code>&lt;div data-uc-design="minimalist"&gt;&lt;/div&gt;</code>
+            </div>
+        </div>
+
+        <div class="design-preview">
+            <h2>Design 2: Creative Animated</h2>
+            <div id="design2"></div>
+            <div class="code-block">
+                <code>&lt;div data-uc-design="animated"&gt;&lt;/div&gt;</code>
+            </div>
+        </div>
+
+        <div class="design-preview">
+            <h2>Design 3: Professional Business</h2>
+            <div id="design3"></div>
+            <div class="code-block">
+                <code>&lt;div data-uc-design="business"&gt;&lt;/div&gt;</code>
+            </div>
+        </div>
+
+        <div class="design-preview">
+            <h2>Design 4: Playful Interactive</h2>
+            <div id="design4"></div>
+            <div class="code-block">
+                <code>&lt;div data-uc-design="playful"&gt;&lt;/div&gt;</code>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/under-construction.js"></script>
+    <script>
+        // Initialize all designs
+        document.addEventListener('DOMContentLoaded', function() {
+            const designs = ['minimalist', 'animated', 'business', 'playful'];
+            designs.forEach((design, index) => {
+                const container = document.getElementById(`design${index + 1}`);
+                container.setAttribute('data-uc-design', design);
+                initUnderConstruction(container);
+            });
+        });
+    </script>
+</body>
+</html> 
